@@ -125,70 +125,27 @@ async function callCreditRedemptionAPI(data) {
   }
 }
 
-// Get original customer ID from discount code properties
+// Get original customer ID from discount code
 async function getOriginalCustomerIdFromDiscount(discountCode) {
   try {
-    console.log('🔍 Fetching discount code details for:', discountCode);
+    console.log('🔍 Extracting original customer ID from discount code:', discountCode);
     
-    // First, find the price rule that contains this discount code
-    const priceRulesResponse = await axios.get(
-      `https://${config.shopify.shopUrl.replace('https://', '')}/admin/api/${config.shopify.apiVersion}/price_rules.json`,
-      {
-        headers: {
-          'X-Shopify-Access-Token': config.shopify.accessToken
-        }
-      }
-    );
-
-    // Find the price rule that contains our discount code
-    const priceRule = priceRulesResponse.data.price_rules.find(rule => 
-      rule.discount_codes && rule.discount_codes.some(code => code.code === discountCode)
-    );
-
-    if (!priceRule) {
-      console.log('⚠️ No price rule found for discount code:', discountCode);
-      return null;
-    }
-
-    console.log('🎯 Found price rule:', priceRule.id);
-
-    // Get the specific discount code details
-    const discountCodeResponse = await axios.get(
-      `https://${config.shopify.shopUrl.replace('https://', '')}/admin/api/${config.shopify.apiVersion}/price_rules/${priceRule.id}/discount_codes.json`,
-      {
-        headers: {
-          'X-Shopify-Access-Token': config.shopify.accessToken
-        }
-      }
-    );
-
-    // Find our specific discount code
-    const discountCodeDetails = discountCodeResponse.data.discount_codes.find(code => code.code === discountCode);
-
-    if (!discountCodeDetails) {
-      console.log('⚠️ No discount code details found for:', discountCode);
-      return null;
-    }
-
-    console.log('🎯 Found discount code details:', discountCodeDetails);
-
-    // Extract original customer ID from properties
-    if (discountCodeDetails.properties) {
-      const originalCustomerIdProperty = discountCodeDetails.properties.find(prop => 
-        prop.name === 'original_customer_id'
-      );
-
-      if (originalCustomerIdProperty) {
-        console.log('✅ Found original customer ID in properties:', originalCustomerIdProperty.value);
-        return originalCustomerIdProperty.value;
+    // Extract original customer ID from discount code
+    // Format: CREDIT_{original_customer_id}
+    if (discountCode && discountCode.startsWith('CREDIT_')) {
+      const originalCustomerId = discountCode.replace('CREDIT_', '');
+      
+      if (originalCustomerId) {
+        console.log('✅ Found original customer ID from discount code:', originalCustomerId);
+        return originalCustomerId;
       }
     }
-
-    console.log('⚠️ No original customer ID property found in discount code');
+    
+    console.log('⚠️ Invalid discount code format:', discountCode);
     return null;
 
   } catch (error) {
-    console.error('❌ Error fetching discount code details:', error.message);
+    console.error('❌ Error extracting customer ID from discount code:', error.message);
     return null;
   }
 }

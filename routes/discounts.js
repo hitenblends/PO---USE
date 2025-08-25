@@ -68,19 +68,8 @@ router.post('/create', async (req, res) => {
         prerequisite_subtotal_range: null, // No prerequisite subtotal
         discount_codes: [
           {
-            code: discount_code || `CREDIT_${Date.now()}`,
-            usage_count: 0,
-            // Store original customer ID as properties for webhook extraction
-            properties: [
-              {
-                name: "original_customer_id",
-                value: customer_id
-              },
-              {
-                name: "discount_type",
-                value: "credit_redemption"
-              }
-            ]
+            code: discount_code || `CREDIT_${customer_id}`,
+            usage_count: 0
           }
         ]
       }
@@ -121,7 +110,7 @@ router.post('/create', async (req, res) => {
     });
 
     // Generate a discount code if none was returned
-    let discountCode = discount_code || `CREDIT_${Date.now()}`;
+    let discountCode = discount_code || `CREDIT_${customer_id}`;
     
     // If the discount was created but no code, we need to create the code separately
     if (!createdDiscount.discount_codes || createdDiscount.discount_codes.length === 0) {
@@ -129,18 +118,7 @@ router.post('/create', async (req, res) => {
       const discountCodeData = {
         discount_code: {
           code: discountCode,
-          price_rule_id: createdDiscount.id,
-          // Store original customer ID as properties for webhook extraction
-          properties: [
-            {
-              name: "original_customer_id",
-              value: customer_id
-            },
-            {
-              name: "discount_type",
-              value: "credit_redemption"
-            }
-          ]
+          price_rule_id: createdDiscount.id
         }
       };
       
