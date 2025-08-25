@@ -133,13 +133,18 @@ async function getOriginalCustomerIdFromDiscount(discountCode) {
     console.log('🔍 Extracting original customer ID from discount code:', discountCode);
     
     // Extract original customer ID from discount code
-    // Format: CREDIT_{original_customer_id}
+    // Format: CREDIT_{timestamp}_{original_customer_id}
     if (discountCode && discountCode.startsWith('CREDIT_')) {
-      const originalCustomerId = discountCode.replace('CREDIT_', '');
+      // Split by underscore and get the last part (customer ID)
+      const parts = discountCode.split('_');
       
-      if (originalCustomerId) {
+      if (parts.length >= 3) {
+        const originalCustomerId = parts.slice(2).join('_'); // Handle customer IDs that might contain underscores
         console.log('✅ Found original customer ID from discount code:', originalCustomerId);
         return originalCustomerId;
+      } else {
+        console.log('⚠️ Invalid discount code format - not enough parts:', discountCode);
+        return null;
       }
     }
     

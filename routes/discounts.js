@@ -68,7 +68,7 @@ router.post('/create', async (req, res) => {
         prerequisite_subtotal_range: null, // No prerequisite subtotal
         discount_codes: [
           {
-            code: discount_code || `CREDIT_${customer_id}`,
+            code: discount_code || `CREDIT_${Date.now()}_${customer_id}`,
             usage_count: 0
           }
         ]
@@ -110,7 +110,7 @@ router.post('/create', async (req, res) => {
     });
 
     // Generate a discount code if none was returned
-    let discountCode = discount_code || `CREDIT_${customer_id}`;
+    let discountCode = discount_code || `CREDIT_${Date.now()}_${customer_id}`;
     
     // If the discount was created but no code, we need to create the code separately
     if (!createdDiscount.discount_codes || createdDiscount.discount_codes.length === 0) {
