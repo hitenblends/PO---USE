@@ -34,8 +34,7 @@ router.post('/create', async (req, res) => {
         allocation_method: "across",
         value_type: "percentage",
         value: "-100.0", // 100% discount
-        customer_selection: "specific",
-        customer_ids: [customer_id],
+        customer_selection: "all", // Changed from "specific" to "all" to avoid customer ID issues
         starts_at: new Date().toISOString(),
         ends_at: expires_at || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Default 24 hours
         usage_limit: 1,
