@@ -5,20 +5,26 @@ const axios = require('axios');
 // Webhook endpoint for Shopify order events
 router.post('/shopify/orders', async (req, res) => {
   try {
-    console.log('🎯 Shopify webhook received:', req.body.topic);
-    
+    console.log('🎯 Shopify webhook received - Raw data:', JSON.stringify(req.body, null, 2));
+    console.log('🎯 Headers:', JSON.stringify(req.headers, null, 2));
+    console.log('🎯 Topic:', req.body.topic);
+    console.log('🎯 Data:', req.body.data);
+
     const { topic, data } = req.body;
-    
+
     if (topic === 'orders/paid') {
       console.log('💰 Order paid webhook - processing credit redemption...');
       await handleOrderPaid(data);
     } else if (topic === 'orders/create') {
       console.log('📦 Order created webhook - processing credit redemption for testing...');
       await handleOrderPaid(data); // Use same handler for testing
+    } else {
+      console.log('⚠️ Unknown webhook topic:', topic);
+      console.log('📋 Full webhook payload:', req.body);
     }
-    
+
     res.status(200).json({ success: true, message: 'Webhook processed' });
-    
+
   } catch (error) {
     console.error('❌ Webhook processing error:', error);
     res.status(500).json({ error: 'Webhook processing failed' });
