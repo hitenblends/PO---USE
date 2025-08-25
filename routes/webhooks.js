@@ -11,20 +11,22 @@ router.post('/shopify/orders', async (req, res) => {
     
     // Read topic from Shopify headers (not request body)
     const topic = req.headers['x-shopify-topic'];
-    const data = req.body; // Order data is in the body
+    
+    // Ensure req.body is properly parsed as an object
+    const orderData = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
     
     console.log('🎯 Topic from headers:', topic);
-    console.log('🎯 Order data:', data.id, data.financial_status);
+    console.log('🎯 Order data:', orderData.id, orderData.financial_status);
 
     if (topic === 'orders/paid') {
       console.log('💰 Order paid webhook - processing credit redemption...');
-      await handleOrderPaid(data);
+      await handleOrderPaid(orderData);
     } else if (topic === 'orders/create') {
       console.log('📦 Order created webhook - processing credit redemption for testing...');
-      await handleOrderPaid(data); // Use same handler for testing
+      await handleOrderPaid(orderData); // Use same handler for testing
     } else {
       console.log('⚠️ Unknown webhook topic:', topic);
-      console.log('📋 Full webhook payload:', req.body);
+      console.log('📋 Full webhook payload:', orderData);
     }
 
     res.status(200).json({ success: true, message: 'Webhook processed' });
