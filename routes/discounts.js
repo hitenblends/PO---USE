@@ -64,6 +64,11 @@ router.post('/create', async (req, res) => {
     
     console.log('Created discount:', createdDiscount);
 
+    // Check if discount was created successfully and has discount codes
+    if (!createdDiscount || !createdDiscount.discount_codes || createdDiscount.discount_codes.length === 0) {
+      throw new Error('Discount created but no discount code generated');
+    }
+
     res.json({
       success: true,
       data: createdDiscount,
