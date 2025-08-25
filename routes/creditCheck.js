@@ -9,13 +9,13 @@ const router = express.Router();
  */
 router.post('/verify', async (req, res) => {
   try {
-    const { customer_id, purchase_order, shopify_customer_id } = req.body;
+    const { customer_id, purchase_order } = req.body;
 
     // Validate required fields
-    if (!customer_id || !purchase_order || !shopify_customer_id) {
+    if (!customer_id || !purchase_order) {
       return res.status(400).json({
         error: 'Missing required fields',
-        message: 'customer_id, purchase_order, and shopify_customer_id are required'
+        message: 'customer_id and purchase_order are required'
       });
     }
 
