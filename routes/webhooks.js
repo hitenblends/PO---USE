@@ -13,8 +13,8 @@ router.post('/shopify/orders', async (req, res) => {
       console.log('💰 Order paid webhook - processing credit redemption...');
       await handleOrderPaid(data);
     } else if (topic === 'orders/create') {
-      console.log('📦 Order created webhook - logging for reference...');
-      console.log('Order ID:', data.id, 'Status:', data.financial_status);
+      console.log('📦 Order created webhook - processing credit redemption for testing...');
+      await handleOrderPaid(data); // Use same handler for testing
     }
     
     res.status(200).json({ success: true, message: 'Webhook processed' });
@@ -28,40 +28,43 @@ router.post('/shopify/orders', async (req, res) => {
 // Handle paid orders - trigger credit redemption
 async function handleOrderPaid(orderData) {
   try {
-    console.log('🎯 Processing paid order:', orderData.id);
+    console.log('🎯 Processing order:', orderData.id);
+    console.log('💰 Financial status:', orderData.financial_status);
+    console.log('📊 Total price:', orderData.total_price);
+    console.log('🎫 Discount codes:', orderData.discount_codes?.length || 0);
     
     // Check if this order used credits (has discount codes)
     if (!orderData.discount_codes || orderData.discount_codes.length === 0) {
       console.log('ℹ️ No discount codes found - order did not use credits');
       return;
     }
-    
+
     // Find credit discount code
     const creditDiscount = orderData.discount_codes.find(discount => 
       discount.code && discount.code.startsWith('CREDIT_')
     );
-    
+
     if (!creditDiscount) {
       console.log('ℹ️ No credit discount code found');
       return;
     }
-    
+
     console.log('🎯 Credit discount found:', creditDiscount.code);
-    
+
     // Extract discount amount
     const discountAmount = parseFloat(creditDiscount.amount || 0);
     if (discountAmount <= 0) {
       console.log('⚠️ Invalid discount amount:', discountAmount);
       return;
     }
-    
+
     // Get customer ID from order
     const customerId = orderData.customer?.id;
     if (!customerId) {
       console.log('⚠️ No customer ID found in order');
       return;
     }
-    
+
     // Prepare redemption data
     const redemptionData = {
       customer_id: customerId.toString(),
@@ -69,12 +72,12 @@ async function handleOrderPaid(orderData) {
       user_id: customerId.toString(), // Same as customer_id
       client_id: orderData.id.toString() // Shopify order ID
     };
-    
+
     console.log('🎯 Calling credit redemption API with:', redemptionData);
-    
+
     // Call credit redemption API
     const redemptionResult = await callCreditRedemptionAPI(redemptionData);
-    
+
     if (redemptionResult.success) {
       console.log('✅ Credit redemption successful for order:', orderData.id);
     } else {
@@ -83,9 +86,9 @@ async function handleOrderPaid(orderData) {
       // TODO: Implement rollback mechanism if needed
       // This could involve removing the Shopify discount
     }
-    
+
   } catch (error) {
-    console.error('❌ Error processing order paid webhook:', error);
+    console.error('❌ Error processing order webhook:', error);
   }
 }
 
