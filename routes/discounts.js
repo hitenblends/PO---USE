@@ -25,20 +25,47 @@ router.post('/create', async (req, res) => {
       });
     }
 
+    // Validate discount amount
+    const discountAmount = parseFloat(discount_amount);
+    if (isNaN(discountAmount) || discountAmount <= 0) {
+      return res.status(400).json({
+        error: 'Invalid discount amount',
+        message: 'discount_amount must be a positive number'
+      });
+    }
+
+    // Ensure discount amount doesn't exceed cart total
+    const cartTotal = parseFloat(cart_total);
+    if (discountAmount > cartTotal) {
+      return res.status(400).json({
+        error: 'Discount amount exceeds cart total',
+        message: `Discount amount $${discountAmount} cannot exceed cart total $${cartTotal}`
+      });
+    }
+
+    console.log('Creating discount with:', {
+      customer_id,
+      discount_amount: discountAmount,
+      cart_total: cartTotal,
+      discount_type: 'fixed_amount'
+    });
+
     // Create discount code in Shopify
     const discountData = {
       price_rule: {
-        title: `Credit Discount - ${customer_id}`,
+        title: `Credit Discount - ${customer_id} - $${discount_amount}`,
         target_type: "line_item",
         target_selection: "all",
         allocation_method: "across",
-        value_type: "percentage",
-        value: "-100.0", // 100% discount
+        value_type: "fixed_amount", // Changed from percentage to fixed amount
+        value: `-${discountAmount}`, // Fixed dollar amount discount
         customer_selection: "all", // Changed from "specific" to "all" to avoid customer ID issues
         starts_at: new Date().toISOString(),
         ends_at: expires_at || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Default 24 hours
         usage_limit: 1,
         applies_once: true,
+        minimum_requirement_type: "none", // No minimum requirement
+        prerequisite_subtotal_range: null, // No prerequisite subtotal
         discount_codes: [
           {
             code: discount_code || `CREDIT_${Date.now()}`,
@@ -68,6 +95,19 @@ router.post('/create', async (req, res) => {
     if (!createdDiscount) {
       throw new Error('Failed to create discount in Shopify');
     }
+
+    // Validate the created discount
+    if (createdDiscount.value_type !== 'fixed_amount') {
+      console.warn('Warning: Created discount value_type is not fixed_amount:', createdDiscount.value_type);
+    }
+
+    console.log('Discount created successfully:', {
+      id: createdDiscount.id,
+      title: createdDiscount.title,
+      value_type: createdDiscount.value_type,
+      value: createdDiscount.value,
+      discount_codes: createdDiscount.discount_codes
+    });
 
     // Generate a discount code if none was returned
     let discountCode = discount_code || `CREDIT_${Date.now()}`;
@@ -107,8 +147,11 @@ router.post('/create', async (req, res) => {
     res.json({
       success: true,
       data: createdDiscount,
-      message: 'Discount created successfully',
-      discount_code: discountCode
+      message: `Discount created successfully for $${discountAmount} off $${cartTotal} cart total`,
+      discount_code: discountCode,
+      discount_amount: discountAmount,
+      cart_total: cartTotal,
+      remaining_amount: cartTotal - discountAmount
     });
 
   } catch (error) {

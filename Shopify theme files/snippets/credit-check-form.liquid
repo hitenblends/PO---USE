@@ -14,7 +14,7 @@
     </div>
     
     <div class="credit-check-toggle">
-      <label class="checkbox-label">
+      <label class="checkbox-label" for="credit-check-toggle">
         <input type="checkbox" id="credit-check-toggle" class="credit-check-checkbox">
         <span class="checkmark"></span>
         I want to use my available credits
@@ -34,13 +34,7 @@
         </div>
       </div>
       
-      <div class="form-row">
-        <div class="form-group">
-          <label for="manual-cart-total">Cart Total (if auto-detection fails):</label>
-          <input type="number" id="manual-cart-total" name="manual_cart_total" step="0.01" min="0" placeholder="Enter cart total manually">
-          <small class="help-text">Only fill this if the automatic cart total detection doesn't work</small>
-        </div>
-      </div>
+
       
       <div class="form-actions">
         <button type="button" id="verify-credits-btn" class="btn btn-primary">
@@ -80,9 +74,26 @@
             
             <div id="discount-success" style="display: none;">
               <div class="success-message">
-                <h4>✅ Discount Applied Successfully!</h4>
-                <p>Your order total is now <strong>$0.00</strong></p>
+                <h4>✅ Discount Created Successfully!</h4>
+                <p>Your discount code has been created and is ready to apply.</p>
                 <p class="discount-code">Discount Code: <span id="applied-discount-code"></span></p>
+                <div class="discount-instructions">
+                  <p><strong>To apply this discount:</strong></p>
+                  <ol>
+                    <li>Look for a "Discount Code" or "Coupon Code" field on this page</li>
+                    <li>Enter the code above</li>
+                    <li>Click "Apply" or "Add" button</li>
+                  </ol>
+                  <p><em>If you can't find the discount field, the discount will be automatically applied at checkout.</em></p>
+                </div>
+                <div class="manual-apply-section">
+                  <button type="button" id="manual-apply-btn" class="btn btn-primary">
+                    Try Auto-Apply Again
+                  </button>
+                  <button type="button" id="copy-code-btn" class="btn btn-secondary">
+                    Copy Code to Clipboard
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -125,6 +136,24 @@
     
     .credit-check-checkbox {
       margin-right: 10px;
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      accent-color: #007cba;
+      transform: scale(1.2);
+      border: 2px solid #007cba;
+      border-radius: 3px;
+    }
+    
+    /* Ensure checkbox is visible */
+    .credit-check-checkbox:checked {
+      background-color: #007cba;
+      border-color: #007cba;
+    }
+    
+    .credit-check-checkbox:hover {
+      border-color: #005a87;
+      accent-color: #005a87;
     }
     
     .credit-check-form {
@@ -157,13 +186,7 @@
       font-size: 14px;
     }
     
-    .help-text {
-      display: block;
-      margin-top: 5px;
-      font-size: 12px;
-      color: #666;
-      font-style: italic;
-    }
+
     
     .form-actions {
       display: flex;
@@ -230,6 +253,12 @@
       background-color: #d1ecf1;
       border: 1px solid #bee5eb;
       color: #0c5460;
+    }
+    
+    .result-warning {
+      background-color: #fff3cd;
+      border: 1px solid #ffeaa7;
+      color: #856404;
     }
     
     .credit-details p {
@@ -308,6 +337,44 @@
       color: #007cba;
     }
     
+    .discount-instructions {
+      margin-top: 15px;
+      padding: 15px;
+      background-color: #f8f9fa;
+      border-radius: 4px;
+      border-left: 4px solid #007cba;
+    }
+    
+    .discount-instructions p {
+      margin: 5px 0;
+    }
+    
+    .discount-instructions ol {
+      margin: 10px 0;
+      padding-left: 20px;
+    }
+    
+    .discount-instructions li {
+      margin: 5px 0;
+      color: #555;
+    }
+    
+    .discount-instructions em {
+      color: #666;
+      font-size: 13px;
+    }
+    
+    .manual-apply-section {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #dee2e6;
+      text-align: center;
+    }
+    
+    .manual-apply-section .btn {
+      margin: 0 10px;
+    }
+    
     @media (max-width: 768px) {
       .form-row {
         flex-direction: column;
@@ -342,15 +409,66 @@
       
       // Toggle form visibility
       toggle.addEventListener('change', function() {
+        console.log('Checkbox toggled:', this.checked);
         if (this.checked) {
+          console.log('Showing form');
           form.style.display = 'block';
           result.style.display = 'none';
+          // Add visual feedback
+          this.parentElement.style.color = '#007cba';
+          this.parentElement.style.fontWeight = 'bold';
         } else {
+          console.log('Hiding form');
           form.style.display = 'none';
           result.style.display = 'none';
           resetForm();
+          // Remove visual feedback
+          this.parentElement.style.color = '#333';
+          this.parentElement.style.fontWeight = '500';
         }
       });
+      
+      // Also add click event for better compatibility
+      toggle.addEventListener('click', function() {
+        console.log('Checkbox clicked, current state:', this.checked);
+      });
+      
+      // Add label click handler for better UX
+      const checkboxLabel = document.querySelector('.checkbox-label');
+      if (checkboxLabel) {
+        checkboxLabel.addEventListener('click', function(e) {
+          // Don't trigger if clicking directly on the checkbox
+          if (e.target !== toggle) {
+            console.log('Label clicked, toggling checkbox');
+            toggle.checked = !toggle.checked;
+            // Trigger the change event manually
+            toggle.dispatchEvent(new Event('change'));
+          }
+        });
+      }
+      
+      // Debug: Check if elements are found
+      console.log('Credit check elements found:', {
+        container: !!container,
+        toggle: !!toggle,
+        form: !!form,
+        verifyBtn: !!verifyBtn,
+        clearBtn: !!clearBtn
+      });
+      
+      // Test form visibility
+      console.log('Initial form display style:', form.style.display);
+      console.log('Initial checkbox checked state:', toggle.checked);
+      
+      // Ensure form is properly hidden initially
+      if (form.style.display !== 'none') {
+        console.log('Form was not hidden initially, hiding it now');
+        form.style.display = 'none';
+      }
+      
+
+      
+
       
       // Verify credits
       verifyBtn.addEventListener('click', async function() {
@@ -419,62 +537,74 @@
           // Always show credit details first
           showCreditDetails(availableCredits, cartTotal, 'Verifying...');
           
-          if (availableCredits >= cartTotal) {
-            // Update status to show we're proceeding
-            creditStatusSpan.textContent = 'Creating Discount...';
+          // Always create discount for available credit amount (even if less than cart total)
+          // Update status to show we're proceeding
+          creditStatusSpan.textContent = 'Creating Discount...';
+          
+          // Show discount creation status
+          showDiscountCreationStatus();
+          
+          // Calculate discount amount (use available credit, but don't exceed cart total)
+          const discountAmount = Math.min(availableCredits, cartTotal);
+          
+          // Prepare discount request data
+          const discountRequestData = {
+            customer_id: customerId,
+            discount_amount: discountAmount,
+            cart_total: cartTotal
+          };
+          
+          console.log('Sending discount creation request:', discountRequestData);
+          
+          // Validate required fields
+          if (!customerId || !discountAmount || !cartTotal) {
+            const errorMsg = `Missing required fields: customer_id=${customerId}, discount_amount=${discountAmount}, cart_total=${cartTotal}`;
+            console.error(errorMsg);
+            showResult(`Error: ${errorMsg}`, 'error');
+            creditStatusSpan.textContent = 'Validation Error';
+            return;
+          }
+          
+          // Create discount
+          const discountResponse = await fetch(`${APP_BASE_URL}/api/discounts/create`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(discountRequestData)
+          });
+          
+          const discountData = await discountResponse.json();
+          
+          console.log('Discount creation response:', discountData);
+          
+          if (discountData.success) {
+            console.log('Discount created successfully:', discountData.discount_code);
             
-            // Show discount creation status
-            showDiscountCreationStatus();
-            
-            // Prepare discount request data
-            const discountRequestData = {
+            // Store discount code and credit data globally for checkout button
+            window.currentDiscountCode = discountData.discount_code;
+            window.creditData = {
+              credit: availableCredits,
               customer_id: customerId,
-              discount_amount: availableCredits,
-              cart_total: cartTotal
+              purchase_order: purchaseOrder
             };
             
-            console.log('Sending discount creation request:', discountRequestData);
+            showDiscountSuccess(discountData.discount_code);
             
-            // Validate required fields
-            if (!customerId || !availableCredits || !cartTotal) {
-              const errorMsg = `Missing required fields: customer_id=${customerId}, discount_amount=${availableCredits}, cart_total=${cartTotal}`;
-              console.error(errorMsg);
-              showResult(`Error: ${errorMsg}`, 'error');
-              creditStatusSpan.textContent = 'Validation Error';
-              return;
-            }
+            // Prepare checkout button to apply discount
+            disableCheckout();
             
-            // Create discount
-            const discountResponse = await fetch(`${APP_BASE_URL}/api/discounts/create`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(discountRequestData)
-            });
-            
-            const discountData = await discountResponse.json();
-            
-            console.log('Discount creation response:', discountData);
-            
-            if (discountData.success) {
-              console.log('Discount created successfully:', discountData.discount_code);
-              showDiscountSuccess(discountData.discount_code);
-              
-              // Disable checkout until discount is applied
-              disableCheckout();
-              
-              // Apply discount code automatically
-              applyDiscountCode(discountData.discount_code);
+            // Show appropriate message based on credit vs cart total
+            if (availableCredits >= cartTotal) {
+              showResult(`✅ Discount code ${discountData.discount_code} created successfully! Your $${cartTotal} order is completely covered by your $${availableCredits} credit.`, 'success');
             } else {
-              console.error('Discount creation failed:', discountData);
-              // Show error but keep credit details visible
-              showResult('Credits verified but failed to create discount. Please contact support.', 'error');
-              creditStatusSpan.textContent = 'Discount Creation Failed';
+              showResult(`✅ Discount code ${discountData.discount_code} created successfully! $${discountAmount} discount applied from your $${availableCredits} credit. You pay remaining $${(cartTotal - discountAmount).toFixed(2)}.`, 'success');
             }
           } else {
-            showResult(`Credits verified. You have $${availableCredits} available, but your cart total is $${cartTotal}.`, 'info');
-            creditStatusSpan.textContent = 'Insufficient Credits';
+            console.error('Discount creation failed:', discountData);
+            // Show error but keep credit details visible
+            showResult('Credits verified but failed to create discount. Please contact support.', 'error');
+            creditStatusSpan.textContent = 'Discount Creation Failed';
           }
         } catch (error) {
           console.error('Discount creation error:', error);
@@ -509,6 +639,38 @@
         discountSuccess.style.display = 'block';
         creditDetails.style.display = 'none';
         appliedDiscountCodeSpan.textContent = code;
+        
+        // Show discount calculation summary
+        showDiscountCalculation();
+      }
+      
+      function showDiscountCalculation() {
+        if (window.creditData && window.currentDiscountCode) {
+          const cartTotal = getCartTotal();
+          const availableCredit = parseFloat(window.creditData.credit) || 0;
+          const discountAmount = Math.min(availableCredit, cartTotal);
+          const remainingAmount = cartTotal - discountAmount;
+          
+          let summaryMessage = '';
+          if (discountAmount >= cartTotal) {
+            summaryMessage = `🎉 Your $${cartTotal.toFixed(2)} order is completely covered by your $${availableCredit.toFixed(2)} credit!`;
+          } else {
+            summaryMessage = `💰 $${discountAmount.toFixed(2)} discount applied from your $${availableCredit.toFixed(2)} credit. You pay remaining $${remainingAmount.toFixed(2)}.`;
+          }
+          
+          // Update the discount success message to include the calculation
+          const discountSuccessMessage = document.querySelector('.discount-success-message');
+          if (discountSuccessMessage) {
+            discountSuccessMessage.textContent = summaryMessage;
+          }
+          
+          console.log('Discount calculation displayed:', {
+            cartTotal: cartTotal,
+            availableCredit: availableCredit,
+            discountAmount: discountAmount,
+            remainingAmount: remainingAmount
+          });
+        }
       }
       
       function resetForm() {
@@ -523,113 +685,1315 @@
       }
       
       function getCartTotal() {
-        // Try multiple selectors to find cart total
-        const selectors = [
-          '.cart-total',
-          '.cart__total', 
-          '[data-cart-total]',
-          '.cart__subtotal',
-          '.cart-subtotal',
-          '.cart__total-price',
-          '.cart-total-price',
-          '.cart__final-price',
-          '.cart-final-price',
-          '.cart__total-amount',
-          '.cart-total-amount',
-          '.cart__summary-total',
-          '.cart-summary-total',
-          '.cart__checkout-total',
-          '.cart-checkout-total',
-          '.cart__grand-total',
-          '.cart-grand-total',
-          '.cart__total-value',
-          '.cart-total-value',
-          '.cart__total-display',
-          '.cart-total-display'
-        ];
-        
-        let cartTotalElement = null;
-        let total = 0;
-        
-        // Try each selector
-        for (const selector of selectors) {
-          cartTotalElement = document.querySelector(selector);
-          if (cartTotalElement) {
-            console.log('Found cart total element with selector:', selector, cartTotalElement);
-            break;
-          }
-        }
+        // Use the specific selector for your theme
+        const cartTotalElement = document.querySelector('.t4s-cart__totalPrice');
         
         if (cartTotalElement) {
           const totalText = cartTotalElement.textContent || cartTotalElement.innerText || '';
+          console.log('Found cart total element with .t4s-cart__totalPrice:', cartTotalElement);
           console.log('Cart total text found:', totalText);
           
-          // Extract numeric value (handle various formats like "$123.45", "123.45", "Total: $123.45")
+          // Extract numeric value from the text
           const numericMatch = totalText.match(/[\d,]+\.?\d*/);
           if (numericMatch) {
-            total = parseFloat(numericMatch[0].replace(/,/g, ''));
+            const total = parseFloat(numericMatch[0].replace(/,/g, ''));
             console.log('Parsed cart total:', total);
+            return total;
           } else {
             console.warn('Could not parse numeric value from:', totalText);
           }
         } else {
-          console.warn('No cart total element found. Tried selectors:', selectors);
+          console.error('Cart total element .t4s-cart__totalPrice not found!');
+        }
+        
+        return 0;
+      }
+      
+      function disableCheckout() {
+        // Store discount code globally for later use
+        console.log('Discount code stored globally:', window.currentDiscountCode);
+        
+        // Don't modify checkout button at all - keep it completely unchanged
+        // The discount will be applied automatically when user proceeds to checkout
+      }
+      
+      function applyDiscountCode(code) {
+        console.log('Attempting to apply discount code:', code);
+        
+        let discountApplied = false;
+        
+        // Method 1: Look for common discount input fields
+        const discountInputs = [
+          '.discount-input',
+          '.discount-code-input', 
+          '[data-discount-input]',
+          '.discount__input',
+          '.discount__code-input',
+          '.cart__discount-input',
+          '.cart-discount-input',
+          '.discount-code',
+          '.discount-code-field',
+          '.discount-field',
+          'input[name="discount"]',
+          'input[name="discount_code"]',
+          'input[name="discountCode"]',
+          'input[placeholder*="discount"]',
+          'input[placeholder*="code"]',
+          'input[placeholder*="coupon"]',
+          // Add theme-specific selectors
+          '.t4s-discount-input',
+          '.t4s-discount-code',
+          '.t4s-cart__discount',
+          '[class*="discount"]',
+          '[class*="coupon"]'
+        ];
+        
+        let discountInput = null;
+        for (const selector of discountInputs) {
+          discountInput = document.querySelector(selector);
+          if (discountInput) {
+            console.log('Found discount input with selector:', selector);
+            break;
+          }
+        }
+        
+        if (discountInput) {
+          console.log('Setting discount code value:', code);
+          discountInput.value = code;
           
-          // Fallback: look for any element containing price-like text
-          const allElements = document.querySelectorAll('*');
-          for (const element of allElements) {
-            const text = element.textContent || element.innerText || '';
-            if (text.includes('Total') && text.includes('$')) {
-              console.log('Potential total element found:', element, text);
-              const numericMatch = text.match(/[\d,]+\.?\d*/);
-              if (numericMatch) {
-                total = parseFloat(numericMatch[0].replace(/,/g, ''));
-                console.log('Fallback cart total found:', total);
+          // Try multiple event types to trigger the input
+          const events = ['input', 'change', 'keyup', 'keydown', 'blur', 'focus'];
+          events.forEach(eventType => {
+            discountInput.dispatchEvent(new Event(eventType, { bubbles: true }));
+          });
+          
+          // Try to find and click the apply button
+          let applyButton = null;
+          
+          // Look for buttons near the input
+          const nearbyButtons = discountInput.parentElement?.querySelectorAll('button, .btn, .button, input[type="submit"]');
+          if (nearbyButtons) {
+            for (const button of nearbyButtons) {
+              const buttonText = button.textContent || button.innerText || '';
+              if (buttonText.toLowerCase().includes('apply') || buttonText.toLowerCase().includes('add') || buttonText.toLowerCase().includes('submit')) {
+                applyButton = button;
+                console.log('Found nearby apply button:', button);
                 break;
+              }
+            }
+          }
+          
+          // If no nearby button, look in the same form
+          if (!applyButton) {
+            const form = discountInput.closest('form');
+            if (form) {
+              const formButtons = form.querySelectorAll('button, .btn, .button, input[type="submit"]');
+              for (const button of formButtons) {
+                const buttonText = button.textContent || button.innerText || '';
+                if (buttonText.toLowerCase().includes('apply') || buttonText.toLowerCase().includes('add') || buttonText.toLowerCase().includes('submit')) {
+                  applyButton = button;
+                  console.log('Found form apply button:', button);
+                  break;
+                }
+              }
+            }
+          }
+          
+          // If still no button, look for any button with apply-related text
+          if (!applyButton) {
+            const allButtons = document.querySelectorAll('button, .btn, .button, input[type="submit"]');
+            for (const button of allButtons) {
+              const buttonText = button.textContent || button.innerText || '';
+              if (buttonText.toLowerCase().includes('apply') || buttonText.toLowerCase().includes('add') || buttonText.toLowerCase().includes('submit')) {
+                applyButton = button;
+                console.log('Found general apply button:', button);
+                break;
+              }
+            }
+          }
+          
+          if (applyButton) {
+            console.log('Clicking apply button:', applyButton);
+            applyButton.click();
+            discountApplied = true;
+            
+            // Wait a moment and check if the discount was applied
+            setTimeout(() => {
+              checkDiscountApplied(code);
+            }, 2000);
+          } else {
+            console.log('No apply button found, trying form submit');
+            const form = discountInput.closest('form');
+            if (form) {
+              form.dispatchEvent(new Event('submit', { bubbles: true }));
+              discountApplied = true;
+            }
+          }
+        }
+        
+        // Method 2: Try to find any form that might accept discount codes
+        if (!discountApplied) {
+          console.log('Trying alternative method: searching for discount forms');
+          const forms = document.querySelectorAll('form');
+          for (const form of forms) {
+            const formText = form.textContent || form.innerText || '';
+            if (formText.toLowerCase().includes('discount') || formText.toLowerCase().includes('coupon') || formText.toLowerCase().includes('code')) {
+              console.log('Found potential discount form:', form);
+              
+              // Look for any input in this form
+              const inputs = form.querySelectorAll('input[type="text"], input[type="hidden"]');
+              for (const input of inputs) {
+                if (input.name && (input.name.toLowerCase().includes('discount') || input.name.toLowerCase().includes('code') || input.name.toLowerCase().includes('coupon'))) {
+                  console.log('Found potential discount input:', input);
+                  input.value = code;
+                  
+                  // Trigger events
+                  const events = ['input', 'change', 'keyup', 'keydown', 'blur', 'focus'];
+                  events.forEach(eventType => {
+                    input.dispatchEvent(new Event(eventType, { bubbles: true }));
+                  });
+                  
+                  // Try to submit the form
+                  const submitBtn = form.querySelector('button[type="submit"], .btn, .button');
+                  if (submitBtn) {
+                    console.log('Submitting form with discount code');
+                    submitBtn.click();
+                    discountApplied = true;
+                    break;
+                  }
+                }
               }
             }
           }
         }
         
-        if (total === 0) {
-          console.error('Cart total is 0 or not found. This will cause API errors.');
+        // Method 3: Try to trigger theme-specific events
+        if (!discountApplied) {
+          console.log('Trying theme-specific discount application');
           
-          // Check if user manually entered cart total
-          const manualInput = document.getElementById('manual-cart-total');
-          if (manualInput && manualInput.value) {
-            const manualTotal = parseFloat(manualInput.value);
-            if (manualTotal > 0) {
-              console.log('Using manually entered cart total:', manualTotal);
-              return manualTotal;
+          // Try common Shopify theme events
+          const themeEvents = [
+            'cart:updated',
+            'cart:refresh',
+            'discount:applied',
+            'coupon:applied'
+          ];
+          
+          themeEvents.forEach(eventName => {
+            console.log('Triggering theme event:', eventName);
+            window.dispatchEvent(new CustomEvent(eventName, { 
+              detail: { code: code } 
+            }));
+          });
+          
+          // Try to trigger a global discount application event
+          window.dispatchEvent(new CustomEvent('applyDiscountCode', { 
+            detail: { code: code } 
+          }));
+        }
+        
+        // Method 4: Try to find and fill any input field that might accept the code
+        if (!discountApplied) {
+          console.log('Trying to find any input field that might accept discount codes');
+          
+          // Look for any text input that might be related to discounts
+          const allTextInputs = document.querySelectorAll('input[type="text"], input[type="search"]');
+          const potentialDiscountInputs = [];
+          
+          for (const input of allTextInputs) {
+            const inputName = input.name || '';
+            const inputId = input.id || '';
+            const inputPlaceholder = input.placeholder || '';
+            const inputClass = input.className || '';
+            
+            // Check if this input might be for discount codes
+            if (inputName.toLowerCase().includes('discount') || 
+                inputName.toLowerCase().includes('coupon') || 
+                inputName.toLowerCase().includes('code') ||
+                inputId.toLowerCase().includes('discount') ||
+                inputId.toLowerCase().includes('coupon') ||
+                inputId.toLowerCase().includes('code') ||
+                inputPlaceholder.toLowerCase().includes('discount') ||
+                inputPlaceholder.toLowerCase().includes('coupon') ||
+                inputPlaceholder.toLowerCase().includes('code') ||
+                inputClass.toLowerCase().includes('discount') ||
+                inputClass.toLowerCase().includes('coupon') ||
+                inputClass.toLowerCase().includes('code')) {
+              
+              potentialDiscountInputs.push(input);
+              console.log('Found potential discount input:', {
+                element: input,
+                name: inputName,
+                id: inputId,
+                placeholder: inputPlaceholder,
+                class: inputClass
+              });
+            }
+          }
+          
+          // Try to fill the first potential discount input
+          if (potentialDiscountInputs.length > 0) {
+            const bestInput = potentialDiscountInputs[0];
+            console.log('Attempting to fill potential discount input:', bestInput);
+            
+            bestInput.value = code;
+            bestInput.focus();
+            
+            // Trigger events
+            bestInput.dispatchEvent(new Event('input', { bubbles: true }));
+            bestInput.dispatchEvent(new Event('change', { bubbles: true }));
+            bestInput.dispatchEvent(new Event('blur', { bubbles: true }));
+            
+            // Look for any button near this input
+            const nearbyButton = bestInput.parentElement?.querySelector('button, .btn, .button, input[type="submit"]');
+            if (nearbyButton) {
+              console.log('Found nearby button, clicking it:', nearbyButton);
+              nearbyButton.click();
+              discountApplied = true;
             }
           }
         }
         
-        return total;
-      }
-      
-      function disableCheckout() {
-        // Disable checkout button until discount is applied
+        // Method 5: Try to trigger a page refresh to see if discount appears
+        if (!discountApplied) {
+          console.log('All automatic methods failed, suggesting manual refresh');
+          
+          // Wait a bit and then suggest refresh
+          setTimeout(() => {
+            showResult(`Discount code ${code} was created but couldn't be applied automatically. The discount may appear after refreshing the page or proceeding to checkout.`, 'warning');
+          }, 2000);
+        }
+        
+        // Show appropriate message based on whether discount was applied
+        if (discountApplied) {
+          showResult(`Discount code ${code} is being applied... Please wait for the page to update.`, 'success');
+        } else {
+          showResult(`Discount code ${code} was created but may not be working. Cart total is still $${getCartTotal().toFixed(2)}. Please refresh the page or try again.`, 'warning');
+          
+          // Add a manual refresh button to the message
+          const refreshBtn = document.createElement('button');
+          refreshBtn.type = 'button';
+          refreshBtn.textContent = 'Refresh Page';
+          refreshBtn.className = 'btn btn-primary';
+          refreshBtn.style.marginLeft = '10px';
+          refreshBtn.onclick = () => window.location.reload();
+          
+          // Add the button to the result message
+          const resultDiv = document.querySelector('.credit-check-result');
+          if (resultDiv && !resultDiv.querySelector('.btn')) {
+            resultDiv.appendChild(refreshBtn);
+          }
+        }
+        
+        // Re-enable checkout button
         const checkoutBtn = document.querySelector('.cart__checkout, .cart-checkout, [data-checkout]');
         if (checkoutBtn) {
-          checkoutBtn.disabled = true;
-          checkoutBtn.textContent = 'Applying Discount...';
+          checkoutBtn.disabled = false;
+          checkoutBtn.textContent = 'Proceed to Checkout';
         }
       }
       
-      function applyDiscountCode(code) {
-        // Apply discount code to cart
-        // This might need to be adjusted based on your theme's discount application method
-        const discountInput = document.querySelector('.discount-input, .discount-code-input, [data-discount-input]');
+      // Function to check if discount was successfully applied
+      function checkDiscountApplied(code) {
+        console.log('Checking if discount was applied:', code);
+        
+        // Wait a bit longer for Shopify to process the discount
+        setTimeout(() => {
+          // Check if cart total has changed (this is the real indicator)
+          const newCartTotal = getCartTotal();
+          console.log('New cart total after discount application:', newCartTotal);
+          
+          // Look for the discount code in the page to see if it's visible
+          const pageText = document.body.textContent || document.body.innerText;
+          if (pageText.includes(code)) {
+            console.log('Discount code found in page');
+            
+            // Check if cart total is now 0 or significantly reduced
+            if (newCartTotal === 0 || newCartTotal < 1) {
+              console.log('Cart total is now 0 or very low, discount appears to be working');
+              showResult(`✅ Discount code ${code} has been successfully applied! Cart total is now $${newCartTotal.toFixed(2)}`, 'success');
+              
+              // Update the cart total display in our UI
+              const cartTotalSpan = document.getElementById('cart-total');
+              if (cartTotalSpan) {
+                cartTotalSpan.textContent = `$${newCartTotal.toFixed(2)}`;
+              }
+              
+              // Show final success state
+              showFinalSuccessState();
+            } else {
+              console.log('Cart total not reduced, discount may not be working');
+              showResult(`Discount code ${code} was entered but may not be working. Cart total is still $${newCartTotal.toFixed(2)}. Please refresh the page or try again.`, 'warning');
+            }
+          } else {
+            console.log('Discount code not found in page, may not be applied');
+            showResult(`Discount code ${code} was created but may not be applied. Please check your cart total.`, 'info');
+          }
+        }, 3000); // Wait 3 seconds for Shopify to process
+      }
+      
+      // Function to show final success state
+      function showFinalSuccessState() {
+        // Hide discount creation status
+        const discountCreationStatus = document.getElementById('discount-creation-status');
+        if (discountCreationStatus) {
+          discountCreationStatus.style.display = 'none';
+        }
+        
+        // Show final success message
+        const discountSuccess = document.getElementById('discount-success');
+        if (discountSuccess) {
+          discountSuccess.style.display = 'block';
+          
+          // Update the success message to show the final state
+          const successMessage = discountSuccess.querySelector('h4');
+          if (successMessage) {
+            successMessage.textContent = '🎉 Discount Successfully Applied!';
+          }
+          
+          const discountInstructions = discountSuccess.querySelector('.discount-instructions');
+          if (discountInstructions) {
+            discountInstructions.innerHTML = `
+              <p><strong>✅ Your discount has been applied!</strong></p>
+              <p>Your cart total is now $0.00</p>
+              <p><em>You can now proceed to checkout with your discounted order.</em></p>
+            `;
+          }
+        }
+        
+        // Force cart refresh to update Shopify's display
+        forceCartRefresh();
+      }
+      
+      // Function to apply discount code in background when checkout is clicked
+      function applyDiscountCodeInBackground(discountCode, checkoutBtn, originalText, originalDisabled, originalClasses, originalStyles) {
+        console.log('Applying discount code in background:', discountCode);
+        
+        // Try to find and fill discount input fields on the page
+        let discountApplied = false;
+        
+        // Method 1: Look for discount input fields
+        const discountInputs = [
+          '.discount-input',
+          '.discount-code-input', 
+          '[data-discount-input]',
+          '.discount__input',
+          '.discount__code-input',
+          '.cart__discount-input',
+          '.cart-discount-input',
+          '.discount-code',
+          '.discount-code-field',
+          '.discount-field',
+          'input[name="discount"]',
+          'input[name="discount_code"]',
+          'input[name="discountCode"]',
+          'input[placeholder*="discount"]',
+          'input[placeholder*="code"]',
+          'input[placeholder*="coupon"]',
+          '.t4s-discount-input',
+          '.t4s-discount-code',
+          '.t4s-cart__discount',
+          '[class*="discount"]',
+          '[class*="coupon"]'
+        ];
+        
+        let discountInput = null;
+        for (const selector of discountInputs) {
+          discountInput = document.querySelector(selector);
+          if (discountInput) {
+            console.log('Found discount input with selector:', selector);
+            break;
+          }
+        }
+        
         if (discountInput) {
-          discountInput.value = code;
-          // Trigger discount application if there's a submit button
-          const discountSubmit = discountInput.nextElementSibling;
-          if (discountSubmit && discountSubmit.tagName === 'BUTTON') {
-            discountSubmit.click();
+          console.log('Setting discount code value:', discountCode);
+          discountInput.value = discountCode;
+          
+          // Trigger events
+          discountInput.dispatchEvent(new Event('input', { bubbles: true }));
+          discountInput.dispatchEvent(new Event('change', { bubbles: true }));
+          discountInput.dispatchEvent(new Event('blur', { bubbles: true }));
+          
+          // Look for apply button
+          let applyButton = null;
+          const nearbyButtons = discountInput.parentElement?.querySelectorAll('button, .btn, .button, input[type="submit"]');
+          if (nearbyButtons) {
+            for (const button of nearbyButtons) {
+              const buttonText = button.textContent || button.innerText || '';
+              if (buttonText.toLowerCase().includes('apply') || buttonText.toLowerCase().includes('add') || buttonText.toLowerCase().includes('submit')) {
+                applyButton = button;
+                console.log('Found apply button:', button);
+                break;
+              }
+            }
+          }
+          
+          if (applyButton) {
+            console.log('Clicking apply button');
+            applyButton.click();
+            discountApplied = true;
+            
+            // Wait for discount to be applied, then proceed to checkout
+            setTimeout(() => {
+              proceedToCheckoutWithDiscount(checkoutBtn, originalText, originalDisabled, originalClasses, originalStyles, discountCode);
+            }, 2000);
+          } else {
+            // Try form submit
+            const form = discountInput.closest('form');
+            if (form) {
+              form.dispatchEvent(new Event('submit', { bubbles: true }));
+              discountApplied = true;
+              
+              setTimeout(() => {
+                proceedToCheckoutWithDiscount(checkoutBtn, originalText, originalDisabled, originalClasses, originalStyles, discountCode);
+              }, 2000);
+            }
+          }
+        }
+        
+        // If no discount input found, proceed to checkout with discount code stored
+        if (!discountApplied) {
+          console.log('No discount input found, proceeding to checkout with discount code stored');
+          
+          // Store discount code in sessionStorage for checkout page
+          sessionStorage.setItem('pendingDiscountCode', discountCode);
+          
+          // Proceed to checkout immediately
+          proceedToCheckoutWithDiscount(checkoutBtn, originalText, originalDisabled, originalClasses, originalStyles, discountCode);
+        }
+      }
+      
+      // Function to proceed to checkout with discount applied
+      function proceedToCheckoutWithDiscount(checkoutBtn, originalText, originalDisabled, originalClasses, originalStyles, discountCode) {
+        console.log('Proceeding to checkout with discount applied:', discountCode);
+        
+        // Restore original checkout button completely
+        checkoutBtn.textContent = originalText;
+        checkoutBtn.disabled = originalDisabled;
+        checkoutBtn.className = originalClasses;
+        if (originalStyles) {
+          checkoutBtn.setAttribute('style', originalStyles);
+        } else {
+          checkoutBtn.removeAttribute('style');
+        }
+        
+        // Remove the discount code attribute
+        checkoutBtn.removeAttribute('data-discount-code');
+        
+        // Show success message briefly
+        showResult(`✅ Discount applied! Redirecting to checkout...`, 'success');
+        
+        // Wait a moment for user to see the message, then proceed to checkout
+        setTimeout(() => {
+          console.log('Redirecting to checkout page');
+          
+          // Try to find the original checkout form or trigger checkout
+          const checkoutForm = document.querySelector('form[action*="checkout"], form[action*="cart"], .checkout-form, .cart-form');
+          if (checkoutForm) {
+            console.log('Found checkout form, submitting it');
+            checkoutForm.submit();
+          } else {
+            // Fallback: try to find and click the original checkout button
+            const originalCheckoutBtn = document.querySelector('.cart__checkout, .cart-checkout, [data-checkout], .btn-checkout, .checkout-btn, [class*="checkout"]');
+            if (originalCheckoutBtn && originalCheckoutBtn !== checkoutBtn) {
+              console.log('Found original checkout button, clicking it');
+              originalCheckoutBtn.click();
+            } else {
+              // Last resort: redirect to checkout URL
+              console.log('Redirecting to checkout URL');
+              window.location.href = '/checkout';
+            }
+          }
+        }, 1500);
+      }
+      
+      // Function to force cart refresh
+      function forceCartRefresh() {
+        console.log('Forcing cart refresh to update display');
+        
+        // Method 1: Try to trigger Shopify's cart refresh events
+        const cartEvents = [
+          'cart:refresh',
+          'cart:updated',
+          'cart:change',
+          'cart:reload'
+        ];
+        
+        cartEvents.forEach(eventName => {
+          console.log('Triggering cart event:', eventName);
+          window.dispatchEvent(new CustomEvent(eventName, { bubbles: true }));
+        });
+        
+        // Method 2: Try to find and click cart refresh buttons
+        const refreshButtons = document.querySelectorAll('button, .btn, .button');
+        for (const button of refreshButtons) {
+          const buttonText = button.textContent || button.innerText || '';
+          if (buttonText.toLowerCase().includes('refresh') || buttonText.toLowerCase().includes('update') || buttonText.toLowerCase().includes('reload')) {
+            console.log('Found refresh button, clicking it:', button);
+            button.click();
+            break;
+          }
+        }
+        
+        // Method 3: Try to reload the cart section
+        const cartSection = document.querySelector('.cart, .cart__container, .cart-container, [class*="cart"]');
+        if (cartSection) {
+          console.log('Found cart section, trying to refresh it');
+          // Trigger a custom event that might refresh the cart
+          cartSection.dispatchEvent(new CustomEvent('refresh', { bubbles: true }));
+        }
+        
+        // Method 4: As a last resort, suggest manual refresh
+        setTimeout(() => {
+          const currentTotal = getCartTotal();
+          if (currentTotal > 0) {
+            showResult(`Cart may need to be refreshed. Current total: $${currentTotal.toFixed(2)}. Try refreshing the page or check if the discount appears in checkout.`, 'info');
+          }
+        }, 5000);
+        
+        // Method 5: Periodically check if cart total updates
+        startCartTotalMonitoring();
+      }
+      
+      // Function to monitor cart total changes
+      function startCartTotalMonitoring() {
+        console.log('Starting cart total monitoring');
+        let checkCount = 0;
+        const maxChecks = 15; // Check 15 times
+        const checkInterval = 1500; // Every 1.5 seconds
+        
+        const monitorInterval = setInterval(() => {
+          checkCount++;
+          const currentTotal = getCartTotal();
+          console.log(`Cart total check ${checkCount}: $${currentTotal.toFixed(2)}`);
+          
+          if (currentTotal === 0 || currentTotal < 1) {
+            console.log('Cart total has been reduced to 0, discount is working!');
+            clearInterval(monitorInterval);
+            showResult(`🎉 Cart total updated! Discount is now working. Total: $${currentTotal.toFixed(2)}`, 'success');
+            
+            // Update our UI
+            const cartTotalSpan = document.getElementById('cart-total');
+            if (cartTotalSpan) {
+              cartTotalSpan.textContent = `$${currentTotal.toFixed(2)}`;
+            }
+            
+            // Show final success state
+            showFinalSuccessState();
+          } else if (checkCount >= maxChecks) {
+            console.log('Max checks reached, stopping monitoring');
+            clearInterval(monitorInterval);
+            
+            // Show final warning with refresh option
+            const finalMessage = `Cart total monitoring complete. Current total: $${currentTotal.toFixed(2)}. The discount may not be working automatically.`;
+            showResult(finalMessage, 'warning');
+            
+            // Add refresh button
+            const refreshBtn = document.createElement('button');
+            refreshBtn.type = 'button';
+            refreshBtn.textContent = 'Refresh Page to Check';
+            refreshBtn.className = 'btn btn-primary';
+            refreshBtn.style.marginLeft = '10px';
+            refreshBtn.onclick = () => window.location.reload();
+            
+            const resultDiv = document.querySelector('.credit-check-result');
+            if (resultDiv && !resultDiv.querySelector('.btn')) {
+              resultDiv.appendChild(refreshBtn);
+            }
+            
+            // Also suggest checking checkout
+            setTimeout(() => {
+              showResult(`💡 Tip: Sometimes discounts appear at checkout even if they don't show on the cart page. Try proceeding to checkout to see if your discount is applied there.`, 'info');
+            }, 3000);
+          }
+        }, checkInterval);
+      }
+      
+      // Debug function to check cart total element
+      function debugCartTotalElements() {
+        console.log('=== DEBUG: Checking cart total element ===');
+        
+        const cartTotalElement = document.querySelector('.t4s-cart__totalPrice');
+        if (cartTotalElement) {
+          console.log('Cart total element found:', cartTotalElement);
+          console.log('Element text:', cartTotalElement.textContent || cartTotalElement.innerText);
+          console.log('Element HTML:', cartTotalElement.outerHTML);
+          
+          // Test the getCartTotal function
+          const total = getCartTotal();
+          console.log('getCartTotal() result:', total);
+        } else {
+          console.error('Cart total element .t4s-cart__totalPrice NOT FOUND!');
+          
+          // Look for similar elements
+          const similarElements = document.querySelectorAll('[class*="total"], [class*="price"], [class*="cart"]');
+          console.log('Similar elements found:', similarElements);
+        }
+        
+        console.log('=== END DEBUG ===');
+      }
+      
+      // Debug function to find discount fields
+      function debugDiscountFields() {
+        console.log('=== DEBUG: Searching for discount fields ===');
+        
+        // Look for common discount input selectors
+        const discountSelectors = [
+          '.discount-input',
+          '.discount-code-input', 
+          '[data-discount-input]',
+          '.discount__input',
+          '.discount__code-input',
+          '.cart__discount-input',
+          '.cart-discount-input',
+          '.discount-code',
+          '.discount-code-field',
+          '.discount-field',
+          'input[name="discount"]',
+          'input[name="discount_code"]',
+          'input[name="discountCode"]',
+          'input[placeholder*="discount"]',
+          'input[placeholder*="code"]',
+          'input[placeholder*="coupon"]'
+        ];
+        
+        const foundFields = [];
+        for (const selector of discountSelectors) {
+          const elements = document.querySelectorAll(selector);
+          if (elements.length > 0) {
+            foundFields.push({ selector, elements: Array.from(elements) });
+          }
+        }
+        
+        if (foundFields.length > 0) {
+          console.log('Discount fields found:', foundFields);
+        } else {
+          console.log('No discount fields found with common selectors');
+          
+          // Look for any form that might be related to discounts
+          const forms = document.querySelectorAll('form');
+          const discountForms = [];
+          for (const form of forms) {
+            const formText = form.textContent || form.innerText || '';
+            if (formText.toLowerCase().includes('discount') || formText.toLowerCase().includes('coupon') || formText.toLowerCase().includes('code')) {
+              discountForms.push({
+                form: form,
+                text: formText.trim(),
+                inputs: Array.from(form.querySelectorAll('input')),
+                buttons: Array.from(form.querySelectorAll('button'))
+              });
+            }
+          }
+          
+          if (discountForms.length > 0) {
+            console.log('Potential discount forms found:', discountForms);
+          } else {
+            console.log('No discount forms found');
+          }
+        }
+        
+        console.log('=== END DEBUG ===');
+      }
+      
+      // Add debug buttons to the form
+      document.addEventListener('DOMContentLoaded', function() {
+        // Debug Cart Total button
+        const debugCartBtn = document.createElement('button');
+        debugCartBtn.type = 'button';
+        debugCartBtn.textContent = 'Debug Cart Total';
+        debugCartBtn.className = 'btn btn-secondary';
+        debugCartBtn.style.marginLeft = '10px';
+        debugCartBtn.onclick = debugCartTotalElements;
+        
+        // Debug Discount Fields button
+        const debugDiscountBtn = document.createElement('button');
+        debugDiscountBtn.type = 'button';
+        debugDiscountBtn.textContent = 'Debug Discount Fields';
+        debugDiscountBtn.className = 'btn btn-secondary';
+        debugDiscountBtn.style.marginLeft = '10px';
+        debugDiscountBtn.onclick = debugDiscountFields;
+        
+        const clearBtn = document.querySelector('#clear-form-btn');
+        if (clearBtn) {
+          clearBtn.parentNode.insertBefore(debugCartBtn, clearBtn.nextSibling);
+          clearBtn.parentNode.insertBefore(debugDiscountBtn, clearBtn.nextSibling);
+        }
+        
+              // Add event handlers for manual discount application
+      document.addEventListener('click', function(e) {
+        if (e.target.id === 'manual-apply-btn') {
+          const discountCode = document.getElementById('applied-discount-code').textContent;
+          if (discountCode) {
+            console.log('Manual apply button clicked, trying to apply:', discountCode);
+            applyDiscountCode(discountCode);
+          }
+        }
+        
+        if (e.target.id === 'copy-code-btn') {
+          const discountCode = document.getElementById('applied-discount-code').textContent;
+          if (discountCode) {
+            navigator.clipboard.writeText(discountCode).then(function() {
+              showResult('Discount code copied to clipboard!', 'success');
+            }).catch(function() {
+              // Fallback for older browsers
+              const textArea = document.createElement('textarea');
+              textArea.value = discountCode;
+              document.body.appendChild(textArea);
+              textArea.select();
+              document.execCommand('copy');
+              showResult('Discount code copied to clipboard!', 'success');
+            });
+          }
+        }
+      });
+      
+      // Function to handle discount code on checkout page (hybrid approach)
+      function handleCheckoutPageDiscount() {
+        // Check if we're on a checkout page
+        if (window.location.pathname.includes('/checkout')) {
+          // Check if discount code is in URL parameters
+          const urlParams = new URLSearchParams(window.location.search);
+          const discountCode = urlParams.get('discount');
+          
+          if (discountCode) {
+            console.log('Found discount code in URL parameters:', discountCode);
+            
+            // Wait a bit for Shopify to process the URL parameter
+            setTimeout(() => {
+              // Check if discount was applied by looking for discount display
+              const discountApplied = document.querySelector('.discount-summary, .discount-tag, [data-discount-applied], .applied-discount');
+              
+              if (!discountApplied) {
+                console.log('URL parameter method failed, trying fallback method');
+                // Try the fallback method
+                applyDiscountOnCheckoutPage(discountCode);
+              } else {
+                console.log('Discount applied successfully via URL parameter');
+                showResult(`✅ Discount code ${discountCode} has been automatically applied!`, 'success');
+              }
+            }, 3000);
+            
+            // Clear the discount code from URL after processing
+            setTimeout(() => {
+              const newUrl = window.location.pathname;
+              window.history.replaceState({}, document.title, newUrl);
+            }, 8000);
           }
         }
       }
+      
+      // Function to apply discount on checkout page (fallback method)
+      function applyDiscountOnCheckoutPage(discountCode) {
+        console.log('Applying discount on checkout page:', discountCode);
+        
+        // Look for discount input fields on checkout page
+        const checkoutDiscountInputs = [
+          'input[name="discount"]',
+          'input[name="discount_code"]',
+          'input[name="discountCode"]',
+          'input[placeholder*="discount"]',
+          'input[placeholder*="code"]',
+          'input[placeholder*="coupon"]',
+          '.discount-input',
+          '.discount-code-input',
+          '[data-discount-input]',
+          '.checkout__discount-input',
+          '.checkout-discount-input',
+          'input[data-discount-input]',
+          'input[data-discount-code]'
+        ];
+        
+        let discountInput = null;
+        for (const selector of checkoutDiscountInputs) {
+          discountInput = document.querySelector(selector);
+          if (discountInput) {
+            console.log('Found checkout discount input:', selector);
+            break;
+          }
+        }
+        
+        if (discountInput) {
+          // Fill the discount input
+          discountInput.value = discountCode;
+          discountInput.focus();
+          
+          // Trigger events
+          discountInput.dispatchEvent(new Event('input', { bubbles: true }));
+          discountInput.dispatchEvent(new Event('change', { bubbles: true }));
+          discountInput.dispatchEvent(new Event('blur', { bubbles: true }));
+          
+          // Look for apply button
+          const applyButton = discountInput.parentElement?.querySelector('button, .btn, .button') || 
+                             document.querySelector('button[data-action="apply-discount"], .apply-discount-btn, .btn--apply-discount') ||
+                             document.querySelector('[data-action="apply-discount"]');
+          
+          if (applyButton) {
+            console.log('Found checkout apply button, clicking it');
+            applyButton.click();
+          } else {
+            console.log('No apply button found, discount code filled but may need manual application');
+            // Try to find any button near the discount input
+            const nearbyButtons = discountInput.parentElement?.querySelectorAll('button, .btn, .button') || [];
+            if (nearbyButtons.length > 0) {
+              console.log('Trying nearby button:', nearbyButtons[0]);
+              nearbyButtons[0].click();
+            }
+          }
+        } else {
+          console.log('No discount input found on checkout page');
+        }
+      }
+      
+      // Run checkout page handler if we're on checkout
+      handleCheckoutPageDiscount();
+      
+      // Monitor for checkout navigation and automatically redirect with discount code
+      function monitorCheckoutNavigation() {
+        console.log('Starting checkout navigation monitoring...');
+        
+        // Function to handle checkout redirect
+        function handleCheckoutRedirect(e, source) {
+          if (window.currentDiscountCode) {
+            console.log(`${source}: Checkout attempted, redirecting with discount code:`, window.currentDiscountCode);
+            
+            // Prevent the default action
+            if (e) {
+              e.preventDefault();
+              e.stopPropagation();
+            }
+            
+                          // Redirect to checkout with discount code parameter
+              // Use the current checkout URL if available, otherwise use generic checkout
+              let checkoutUrl;
+              if (window.currentCheckoutUrl) {
+                // Append discount to existing checkout URL
+                checkoutUrl = `${window.currentCheckoutUrl}?discount=${encodeURIComponent(window.currentDiscountCode)}`;
+              } else {
+                // Use generic checkout path
+                checkoutUrl = `/checkout?discount=${encodeURIComponent(window.currentDiscountCode)}`;
+              }
+              console.log('Redirecting to:', checkoutUrl);
+              
+              // Show brief message before redirect
+              showResult(`✅ Redirecting to checkout with discount code ${window.currentDiscountCode}...`, 'success');
+              
+              // Redirect immediately
+              window.location.href = checkoutUrl;
+            
+            return false;
+          }
+        }
+        
+        // Method 1: Direct click monitoring with multiple selectors
+        const checkoutSelectors = [
+          // Specific to your theme
+          '.t4s-btn__checkout',
+          '.t4s-btn-group__checkout-update button[name="checkout"]',
+          '.t4s-btn-group__checkout-update .t4s-btn__checkout',
+          
+          // Generic fallbacks
+          '.cart__checkout',
+          '.cart-checkout', 
+          '[data-checkout]',
+          '.btn-checkout',
+          '.checkout-btn',
+          '[class*="checkout"]',
+          'button[type="submit"]',
+          'input[type="submit"]',
+          '.btn[href*="checkout"]',
+          'a[href*="checkout"]'
+        ];
+        
+        // Find all checkout buttons and add direct event listeners
+        function attachCheckoutListeners() {
+          checkoutSelectors.forEach(selector => {
+            const elements = document.querySelectorAll(selector);
+            elements.forEach(element => {
+              console.log('Attaching listener to checkout element:', element);
+              
+              // Remove existing listeners to avoid duplicates
+              element.removeEventListener('click', element.checkoutHandler);
+              
+              // Create new handler
+              element.checkoutHandler = function(e) {
+                console.log('Checkout element clicked directly:', element);
+                return handleCheckoutRedirect(e, 'Direct Click');
+              };
+              
+              // Add listener
+              element.addEventListener('click', element.checkoutHandler, true);
+            });
+          });
+        }
+        
+        // Method 2: Global click monitoring
+        document.addEventListener('click', function(e) {
+          const target = e.target;
+          
+          // Check if clicked element is a checkout button/link
+          if (target.matches(checkoutSelectors.join(',')) ||
+              target.closest(checkoutSelectors.join(','))) {
+            
+            console.log('Checkout button/link clicked via global listener:', target);
+            return handleCheckoutRedirect(e, 'Global Click');
+          }
+        }, true);
+        
+        // Method 3: Form submission monitoring
+        document.addEventListener('submit', function(e) {
+          const form = e.target;
+          console.log('Form submitted:', form.action);
+          
+          // Check if this is the T4S cart form
+          if (form.querySelector('.t4s-btn__checkout') && window.currentDiscountCode) {
+            console.log('T4S cart form submitted, intercepting...');
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const checkoutUrl = `/checkout?discount=${encodeURIComponent(window.currentDiscountCode)}`;
+            console.log('T4S form redirecting to:', checkoutUrl);
+            
+            showResult(`✅ Redirecting to checkout with discount code ${window.currentDiscountCode}...`, 'success');
+            window.location.href = checkoutUrl;
+            
+            return false;
+          }
+          
+          // Generic form monitoring
+          if (form.action && (form.action.includes('checkout') || form.action.includes('cart'))) {
+            return handleCheckoutRedirect(e, 'Form Submit');
+          }
+        }, true);
+        
+        // Method 4: History API monitoring
+        const originalPushState = history.pushState;
+        const originalReplaceState = history.replaceState;
+        
+        history.pushState = function(...args) {
+          console.log('History pushState:', args);
+          if (args[2] && args[2].includes('/checkout') && window.currentDiscountCode) {
+            console.log('Intercepting checkout navigation via pushState');
+            return handleCheckoutRedirect(null, 'PushState');
+          }
+          return originalPushState.apply(this, args);
+        };
+        
+        history.replaceState = function(...args) {
+          console.log('History replaceState:', args);
+          if (args[2] && args[2].includes('/checkout') && window.currentDiscountCode) {
+            console.log('Intercepting checkout navigation via replaceState');
+            return handleCheckoutRedirect(null, 'ReplaceState');
+          }
+          return originalReplaceState.apply(this, args);
+        };
+        
+        // Method 5: MutationObserver to catch dynamically added checkout buttons
+        const observer = new MutationObserver(function(mutations) {
+          let shouldReattach = false;
+          mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList') {
+              mutation.addedNodes.forEach(function(node) {
+                if (node.nodeType === 1) { // Element node
+                  if (node.matches && node.matches(checkoutSelectors.join(','))) {
+                    shouldReattach = true;
+                  }
+                  if (node.querySelectorAll) {
+                    const checkoutElements = node.querySelectorAll(checkoutSelectors.join(','));
+                    if (checkoutElements.length > 0) {
+                      shouldReattach = true;
+                    }
+                  }
+                }
+              });
+            }
+          });
+          
+          if (shouldReattach) {
+            console.log('New checkout elements detected, reattaching listeners');
+            setTimeout(attachCheckoutListeners, 100);
+          }
+        });
+        
+        // Start observing
+        observer.observe(document.body, {
+          childList: true,
+          subtree: true
+        });
+        
+        // Initial attachment
+        attachCheckoutListeners();
+        
+        // Reattach periodically to catch any missed elements
+        setInterval(attachCheckoutListeners, 2000);
+        
+        // Also monitor for checkout URL changes
+        setInterval(detectCheckoutUrl, 2000);
+        
+        // Method 6: Direct modification of checkout buttons (most aggressive)
+        function modifyCheckoutButtons() {
+          checkoutSelectors.forEach(selector => {
+            const elements = document.querySelectorAll(selector);
+            elements.forEach(element => {
+              if (window.currentDiscountCode) {
+                console.log('Modifying checkout button:', element);
+                
+                // Store original values
+                if (!element.originalHref) element.originalHref = element.href;
+                if (!element.originalAction) element.originalAction = element.action;
+                if (!element.originalOnclick) element.originalOnclick = element.onclick;
+                
+                // Modify href if it's a link
+                if (element.href && element.href.includes('/checkout')) {
+                  // Use the current checkout URL if available, otherwise use generic checkout
+                  if (window.currentCheckoutUrl) {
+                    element.href = `${window.currentCheckoutUrl}?discount=${encodeURIComponent(window.currentDiscountCode)}`;
+                  } else {
+                    element.href = `/checkout?discount=${encodeURIComponent(window.currentDiscountCode)}`;
+                  }
+                  console.log('Modified href to:', element.href);
+                }
+                
+                // Modify action if it's a form
+                if (element.action && element.action.includes('/checkout')) {
+                  // Use the current checkout URL if available, otherwise use generic checkout
+                  if (window.currentCheckoutUrl) {
+                    element.action = `${window.currentCheckoutUrl}?discount=${encodeURIComponent(window.currentDiscountCode)}`;
+                  } else {
+                    element.action = `/checkout?discount=${encodeURIComponent(window.currentDiscountCode)}`;
+                  }
+                  console.log('Modified action to:', element.action);
+                }
+                
+                // Add onclick handler
+                element.onclick = function(e) {
+                  console.log('Modified checkout button clicked');
+                  return handleCheckoutRedirect(e, 'Modified Button');
+                };
+              }
+            });
+          });
+          
+          // Special handling for T4S theme checkout button
+          const t4sCheckoutButton = document.querySelector('.t4s-btn__checkout');
+          if (t4sCheckoutButton && window.currentDiscountCode) {
+            console.log('Found T4S checkout button, applying special handling:', t4sCheckoutButton);
+            
+            // Store original form
+            const originalForm = t4sCheckoutButton.closest('form');
+            if (originalForm && !originalForm.originalAction) {
+              originalForm.originalAction = originalForm.action;
+              console.log('Stored original form action:', originalForm.originalAction);
+            }
+            
+            // Override the button's click behavior completely
+            t4sCheckoutButton.addEventListener('click', function(e) {
+              if (window.currentDiscountCode) {
+                console.log('T4S checkout button clicked, intercepting...');
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                
+                // Redirect immediately
+                // Use the current checkout URL if available, otherwise use generic checkout
+                let checkoutUrl;
+                if (window.currentCheckoutUrl) {
+                  // Append discount to existing checkout URL
+                  checkoutUrl = `${window.currentCheckoutUrl}?discount=${encodeURIComponent(window.currentDiscountCode)}`;
+                } else {
+                  // Use generic checkout path
+                  checkoutUrl = `/checkout?discount=${encodeURIComponent(window.currentDiscountCode)}`;
+                }
+                console.log('T4S redirecting to:', checkoutUrl);
+                
+                showResult(`✅ Redirecting to checkout with discount code ${window.currentDiscountCode}...`, 'success');
+                window.location.href = checkoutUrl;
+                
+                return false;
+              }
+            }, true);
+            
+            console.log('T4S checkout button handler attached successfully');
+          }
+        }
+        
+        // Run modification when discount code is available
+        if (window.currentDiscountCode) {
+          modifyCheckoutButtons();
+        }
+        
+        // Watch for discount code changes
+        Object.defineProperty(window, 'currentDiscountCode', {
+          set: function(value) {
+            this._currentDiscountCode = value;
+            if (value) {
+              console.log('Discount code set, modifying checkout buttons');
+              setTimeout(modifyCheckoutButtons, 500);
+            }
+          },
+          get: function() {
+            return this._currentDiscountCode;
+          }
+        });
+      }
+      
+      // Start monitoring checkout navigation
+      monitorCheckoutNavigation();
+      
+      // Function to detect and store the current checkout URL
+      function detectCheckoutUrl() {
+        // Look for checkout buttons and extract their URLs
+        const checkoutButtons = document.querySelectorAll('button[name="checkout"], .t4s-btn__checkout, [data-checkout]');
+        checkoutButtons.forEach(button => {
+          const form = button.closest('form');
+          if (form && form.action && form.action.includes('/checkout')) {
+            window.currentCheckoutUrl = form.action;
+            console.log('Detected checkout URL from form:', window.currentCheckoutUrl);
+          }
+        });
+        
+        // Also check for any checkout links
+        const checkoutLinks = document.querySelectorAll('a[href*="/checkout"]');
+        checkoutLinks.forEach(link => {
+          if (link.href && link.href.includes('/checkout')) {
+            window.currentCheckoutUrl = link.href;
+            console.log('Detected checkout URL from link:', window.currentCheckoutUrl);
+          }
+        });
+        
+        // If no specific URL found, try to construct from common patterns
+        if (!window.currentCheckoutUrl) {
+          // Check if we're on a cart page and construct checkout URL
+          if (window.location.pathname.includes('/cart')) {
+            // Try to get the cart token from the page
+            const cartTokenMatch = document.body.innerHTML.match(/cart_token["']?\s*:\s*["']([^"']+)["']/);
+            if (cartTokenMatch) {
+              const cartToken = cartTokenMatch[1];
+              window.currentCheckoutUrl = `/checkout?token=${cartToken}`;
+              console.log('Constructed checkout URL with cart token:', window.currentCheckoutUrl);
+            } else {
+              // Fallback to generic checkout
+              window.currentCheckoutUrl = '/checkout';
+              console.log('Using generic checkout URL as fallback');
+            }
+          }
+        }
+        
+        console.log('Final checkout URL detected:', window.currentCheckoutUrl);
+      }
+      
+      // Special immediate handling for T4S theme checkout button
+      function setupT4SCheckoutButton() {
+        const t4sCheckoutButton = document.querySelector('.t4s-btn__checkout');
+        if (t4sCheckoutButton) {
+          console.log('Found T4S checkout button, setting up immediate handler:', t4sCheckoutButton);
+          
+          // Remove any existing handlers to avoid conflicts
+          t4sCheckoutButton.removeEventListener('click', t4sCheckoutButton.t4sCheckoutHandler);
+          
+          // Create new handler
+          t4sCheckoutButton.t4sCheckoutHandler = function(e) {
+            console.log('T4S checkout button clicked!');
+            
+            if (window.currentDiscountCode) {
+              console.log('Discount code available, intercepting checkout...');
+              e.preventDefault();
+              e.stopPropagation();
+              e.stopImmediatePropagation();
+              
+              const checkoutUrl = `/checkout?discount=${encodeURIComponent(window.currentDiscountCode)}`;
+              console.log('T4S redirecting to checkout with discount:', checkoutUrl);
+              
+              showResult(`✅ Redirecting to checkout with discount code ${window.currentDiscountCode}...`, 'success');
+              
+              // Redirect immediately
+              window.location.href = checkoutUrl;
+              return false;
+            } else {
+              console.log('No discount code available, proceeding with normal checkout');
+            }
+          };
+          
+          // Attach handler with capture phase for early interception
+          t4sCheckoutButton.addEventListener('click', t4sCheckoutButton.t4sCheckoutHandler, true);
+          console.log('T4S checkout button handler attached successfully');
+        } else {
+          console.log('T4S checkout button not found yet, will retry...');
+        }
+      }
+      
+              // Run immediately and retry if needed
+        detectCheckoutUrl(); // Detect checkout URL first
+        setupT4SCheckoutButton();
+        setTimeout(() => { detectCheckoutUrl(); setupT4SCheckoutButton(); }, 1000);
+        setTimeout(() => { detectCheckoutUrl(); setupT4SCheckoutButton(); }, 3000);
+      
+      // Function to update discount calculation display
+      window.updateDiscountCalculation = function() {
+        if (window.creditData && window.currentDiscountCode) {
+          const cartTotal = getCartTotal();
+          const availableCredit = parseFloat(window.creditData.credit) || 0;
+          const discountAmount = Math.min(availableCredit, cartTotal);
+          const remainingAmount = cartTotal - discountAmount;
+          
+          let summaryMessage = '';
+          if (discountAmount >= cartTotal) {
+            summaryMessage = `🎉 Your $${cartTotal.toFixed(2)} order is completely covered by your $${availableCredit.toFixed(2)} credit!`;
+          } else {
+            summaryMessage = `💰 $${discountAmount.toFixed(2)} discount applied from your $${availableCredit.toFixed(2)} credit. You pay remaining $${remainingAmount.toFixed(2)}.`;
+          }
+          
+          // Show the calculation in the result area
+          if (window.showResult) {
+            window.showResult(summaryMessage, 'success');
+          }
+          
+          console.log('Discount calculation updated:', {
+            cartTotal: cartTotal,
+            availableCredit: availableCredit,
+            discountAmount: discountAmount,
+            remainingAmount: remainingAmount
+          });
+        }
+      };
+      
+      // Debug function to test discount application
+      window.testDiscountApplication = function() {
+        if (window.currentDiscountCode) {
+          console.log('Testing discount application with code:', window.currentDiscountCode);
+          
+          // Use detected checkout URL if available
+          let checkoutUrl;
+          if (window.currentCheckoutUrl) {
+            checkoutUrl = `${window.currentCheckoutUrl}?discount=${encodeURIComponent(window.currentDiscountCode)}`;
+          } else {
+            checkoutUrl = `/checkout?discount=${encodeURIComponent(window.currentDiscountCode)}`;
+          }
+          
+          console.log('Test URL:', checkoutUrl);
+          console.log('Current checkout URL detected:', window.currentCheckoutUrl);
+          
+          // Show test message
+          showResult(`🧪 Testing discount application: ${checkoutUrl}`, 'info');
+          
+          // Open in new tab for testing
+          window.open(checkoutUrl, '_blank');
+        } else {
+          console.log('No discount code available for testing');
+          showResult('❌ No discount code available for testing', 'error');
+        }
+      };
+      
+      // Add debug button to the page
+      setTimeout(() => {
+        const debugButton = document.createElement('button');
+        debugButton.textContent = '🧪 Test Discount';
+        debugButton.style.cssText = 'position: fixed; top: 10px; right: 10px; z-index: 9999; padding: 10px; background: #007cba; color: white; border: none; border-radius: 5px; cursor: pointer;';
+        debugButton.onclick = window.testDiscountApplication;
+        document.body.appendChild(debugButton);
+      }, 2000);
+      
+      });
     });
   </script>
 {% endif %}
