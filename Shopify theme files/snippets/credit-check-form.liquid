@@ -365,8 +365,11 @@
           const data = await response.json();
           
           if (data.success) {
+            console.log('Credit check successful:', data.data);
+            showResult('Credits verified successfully!', 'success');
             await handleCreditCheckSuccess(data.data, customerId);
           } else {
+            console.error('Credit check failed:', data);
             showResult(data.message || 'Credit check failed.', 'error');
           }
         } catch (error) {
@@ -390,7 +393,13 @@
           // Check if credits are sufficient
           const availableCredits = parseFloat(creditData.credit || 0);
           
+          // Always show credit details first
+          showCreditDetails(availableCredits, cartTotal, 'Verifying...');
+          
           if (availableCredits >= cartTotal) {
+            // Update status to show we're proceeding
+            creditStatusSpan.textContent = 'Creating Discount...';
+            
             // Show discount creation status
             showDiscountCreationStatus();
             
@@ -409,7 +418,10 @@
             
             const discountData = await discountResponse.json();
             
+            console.log('Discount creation response:', discountData);
+            
             if (discountData.success) {
+              console.log('Discount created successfully:', discountData.discount_code);
               showDiscountSuccess(discountData.discount_code);
               
               // Disable checkout until discount is applied
@@ -418,15 +430,19 @@
               // Apply discount code automatically
               applyDiscountCode(discountData.discount_code);
             } else {
+              console.error('Discount creation failed:', discountData);
+              // Show error but keep credit details visible
               showResult('Credits verified but failed to create discount. Please contact support.', 'error');
+              creditStatusSpan.textContent = 'Discount Creation Failed';
             }
           } else {
             showResult(`Credits verified. You have $${availableCredits} available, but your cart total is $${cartTotal}.`, 'info');
-            showCreditDetails(availableCredits, cartTotal, 'Insufficient');
+            creditStatusSpan.textContent = 'Insufficient Credits';
           }
         } catch (error) {
           console.error('Discount creation error:', error);
           showResult('Credits verified but failed to apply discount. Please contact support.', 'error');
+          creditStatusSpan.textContent = 'Error';
         }
       }
       
@@ -437,10 +453,12 @@
       }
       
       function showCreditDetails(credits, total, status) {
+        console.log('Showing credit details:', { credits, total, status });
         availableCreditsSpan.textContent = `$${credits}`;
         cartTotalSpan.textContent = `$${total}`;
         creditStatusSpan.textContent = status;
         creditDetails.style.display = 'block';
+        result.style.display = 'block'; // Ensure the result container is visible
       }
 
       function showDiscountCreationStatus() {
