@@ -450,6 +450,45 @@
         form.style.display = 'none';
       }
       
+      // Check if we're on a thank you page and handle credit redemption
+      function checkThankYouPage() {
+        // Check if current page is a thank you/order confirmation page
+        const isThankYouPage = window.location.pathname.includes('/thank_you') || 
+                              window.location.pathname.includes('/order') ||
+                              window.location.pathname.includes('/confirmation') ||
+                              document.title.toLowerCase().includes('thank you') ||
+                              document.title.toLowerCase().includes('order confirmation');
+        
+        if (isThankYouPage) {
+          console.log('🎯 Thank you page detected, checking for credit redemption...');
+          
+          // Wait a bit for page to fully load, then handle credit redemption
+          setTimeout(async () => {
+            const redemptionSuccess = await handleCreditRedemption();
+            if (redemptionSuccess) {
+              console.log('✅ Credit redemption completed successfully!');
+            } else {
+              console.log('⚠️ Credit redemption completed with warnings');
+            }
+          }, 2000); // Wait 2 seconds for page to load
+        }
+      }
+      
+      // Run thank you page check on page load
+      checkThankYouPage();
+      
+      // Also listen for navigation changes (for SPA-like behavior)
+      window.addEventListener('popstate', checkThankYouPage);
+      
+      // Listen for URL changes
+      let currentUrl = window.location.href;
+      setInterval(() => {
+        if (window.location.href !== currentUrl) {
+          currentUrl = window.location.href;
+          checkThankYouPage();
+        }
+      }, 1000);
+      
 
       
 
@@ -562,16 +601,33 @@
           
           console.log('Discount creation response:', discountData);
           
-          if (discountData.success) {
-            console.log('Discount created successfully:', discountData.discount_code);
-            
-            // Store discount code and credit data globally for checkout button
-            window.currentDiscountCode = discountData.discount_code;
-            window.creditData = {
-              credit: availableCredits,
-              customer_id: customerId,
-              purchase_order: creditData.purchase_order
-            };
+                      if (discountData.success) {
+              console.log('Discount created successfully:', discountData.discount_code);
+              
+              // Store discount code and credit data globally for checkout button
+              window.currentDiscountCode = discountData.discount_code;
+              window.creditData = {
+                credit: availableCredits,
+                customer_id: customerId,
+                purchase_order: creditData.purchase_order
+              };
+              
+              // Store credit usage data for thank you page redemption
+              window.creditUsageData = {
+                customer_id: customerId,
+                amount: -discountAmount,  // Negative value for credit reduction
+                user_id: customerId,      // Same as customer_id
+                used_credits: true,
+                discount_code: discountData.discount_code,
+                discount_amount: discountAmount,
+                available_credits: availableCredits,
+                cart_total: cartTotal
+              };
+              
+              // Also store in localStorage for cross-page persistence
+              localStorage.setItem('creditUsageData', JSON.stringify(window.creditUsageData));
+              
+              console.log('Credit usage data stored for redemption:', window.creditUsageData);
             
             showDiscountSuccess(discountData.discount_code);
             
@@ -696,6 +752,121 @@
         }
         
         return 0;
+      }
+      
+      // Credit Redemption API Function
+      async function callCreditRedemptionAPI(data) {
+        try {
+          console.log('🎯 Calling credit redemption API with data:', data);
+          
+          const response = await fetch('http://54.148.31.213/api/creditRedemption/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+          
+          const result = await response.json();
+          console.log('🎯 Credit redemption API response:', result);
+          
+          return result;
+        } catch (error) {
+          console.error('❌ Credit redemption API error:', error);
+          return { success: false, error: error.message };
+        }
+      }
+      
+      // Function to handle credit redemption on thank you page
+      async function handleCreditRedemption() {
+        // Check if credits were used (from window or localStorage)
+        let creditData = window.creditUsageData;
+        
+        if (!creditData) {
+          // Try to get from localStorage
+          const storedData = localStorage.getItem('creditUsageData');
+          if (storedData) {
+            try {
+              creditData = JSON.parse(storedData);
+              console.log('🎯 Credit usage data retrieved from localStorage:', creditData);
+            } catch (error) {
+              console.error('❌ Error parsing stored credit data:', error);
+              return false;
+            }
+          }
+        }
+        
+        if (creditData && creditData.used_credits) {
+          console.log('🎯 Credits were used, preparing redemption...');
+          
+          try {
+            // Try to get order ID from thank you page
+            const orderId = getOrderIdFromThankYouPage();
+            
+            if (orderId) {
+              console.log('🎯 Order ID found:', orderId);
+              
+              // Prepare redemption data
+              const redemptionData = {
+                customer_id: window.creditUsageData.customer_id,
+                amount: window.creditUsageData.amount,
+                user_id: window.creditUsageData.user_id,
+                client_id: orderId
+              };
+              
+              console.log('🎯 Calling credit redemption API with:', redemptionData);
+              
+              // Call the redemption API
+              const redemptionResult = await callCreditRedemptionAPI(redemptionData);
+              
+              if (redemptionResult.success) {
+                console.log('✅ Credit redemption successful!');
+                // Clear the stored data
+                delete window.creditUsageData;
+                localStorage.removeItem('creditUsageData');
+                return true;
+              } else {
+                console.error('❌ Credit redemption failed:', redemptionResult);
+                return false;
+              }
+            } else {
+              console.warn('⚠️ Order ID not found on thank you page');
+              return false;
+            }
+          } catch (error) {
+            console.error('❌ Error during credit redemption:', error);
+            return false;
+          }
+        } else {
+          console.log('ℹ️ No credits were used in this order');
+          return true;
+        }
+      }
+      
+      // Function to extract order ID from thank you page
+      function getOrderIdFromThankYouPage() {
+        // Method 1: Check URL for order ID
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderId = urlParams.get('order_id') || urlParams.get('id');
+        
+        if (orderId) {
+          console.log('🎯 Order ID found in URL:', orderId);
+          return orderId;
+        }
+        
+        // Method 2: Look for order ID in page content
+        const orderElements = document.querySelectorAll('[data-order-id], .order-id, [id*="order"], [class*="order"]');
+        for (const element of orderElements) {
+          const text = element.textContent || element.innerText || '';
+          const orderMatch = text.match(/order[:\s]*([A-Za-z0-9-_]+)/i);
+          if (orderMatch) {
+            console.log('🎯 Order ID found in page content:', orderMatch[1]);
+            return orderMatch[1];
+          }
+        }
+        
+        // Method 3: Generate unique ID if none found
+        const uniqueId = 'ORDER_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        console.log('🎯 Generated unique order ID:', uniqueId);
+        return uniqueId;
       }
       
       function disableCheckout() {
