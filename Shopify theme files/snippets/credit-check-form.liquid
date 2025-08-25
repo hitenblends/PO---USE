@@ -47,9 +47,36 @@
         <div class="result-content">
           <div id="result-message"></div>
           <div id="credit-details" style="display: none;">
-            <p><strong>Available Credits:</strong> <span id="available-credits"></span></p>
-            <p><strong>Cart Total:</strong> <span id="cart-total"></span></p>
-            <p><strong>Status:</strong> <span id="credit-status"></span></p>
+            <div class="credit-summary">
+              <h4>🎉 Credit Verification Successful!</h4>
+              <div class="credit-amount">
+                <span class="credit-label">Available Credits:</span>
+                <span class="credit-value" id="available-credits">$0</span>
+              </div>
+              <div class="cart-summary">
+                <span class="cart-label">Cart Total:</span>
+                <span class="cart-value" id="cart-total">$0</span>
+              </div>
+              <div class="discount-status">
+                <span class="status-label">Status:</span>
+                <span class="status-value" id="credit-status">Pending</span>
+              </div>
+            </div>
+            
+            <div id="discount-creation-status" style="display: none;">
+              <div class="loading-discount">
+                <div class="spinner"></div>
+                <p>Creating your discount...</p>
+              </div>
+            </div>
+            
+            <div id="discount-success" style="display: none;">
+              <div class="success-message">
+                <h4>✅ Discount Applied Successfully!</h4>
+                <p>Your order total is now <strong>$0.00</strong></p>
+                <p class="discount-code">Discount Code: <span id="applied-discount-code"></span></p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -193,6 +220,78 @@
       margin: 5px 0;
     }
     
+    .credit-summary {
+      margin-bottom: 20px;
+      padding: 15px;
+      background-color: #e9ecef;
+      border-radius: 4px;
+    }
+    
+    .credit-summary h4 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      color: #28a745;
+    }
+    
+    .credit-amount, .cart-summary, .discount-status {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+    }
+    
+    .credit-label, .cart-label, .status-label {
+      font-weight: 500;
+      color: #555;
+    }
+    
+    .credit-value, .cart-value, .status-value {
+      font-weight: bold;
+      color: #333;
+    }
+    
+    .loading-discount {
+      text-align: center;
+      padding: 20px;
+    }
+    
+    .spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      border-left-color: #007cba;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 10px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .success-message {
+      text-align: center;
+      padding: 20px;
+      background-color: #d4edda;
+      border: 1px solid #c3e6cb;
+      border-radius: 4px;
+    }
+    
+    .success-message h4 {
+      color: #155724;
+      margin-top: 0;
+      margin-bottom: 10px;
+    }
+    
+    .success-message p {
+      margin-bottom: 10px;
+    }
+    
+    .discount-code {
+      font-size: 16px;
+      font-weight: bold;
+      color: #007cba;
+    }
+    
     @media (max-width: 768px) {
       .form-row {
         flex-direction: column;
@@ -215,9 +314,15 @@
       const result = document.getElementById('credit-check-result');
       const resultMessage = document.getElementById('result-message');
       const creditDetails = document.getElementById('credit-details');
+      const discountCreationStatus = document.getElementById('discount-creation-status');
+      const discountSuccess = document.getElementById('discount-success');
+      const availableCreditsSpan = document.getElementById('available-credits');
+      const cartTotalSpan = document.getElementById('cart-total');
+      const creditStatusSpan = document.getElementById('credit-status');
+      const appliedDiscountCodeSpan = document.getElementById('applied-discount-code');
       
       // App configuration - UPDATE THIS URL TO YOUR DEPLOYED APP
-      const APP_BASE_URL = 'https://your-app-name.onrender.com';
+      const APP_BASE_URL = 'https://shopify-credit-check-app.onrender.com';
       
       // Toggle form visibility
       toggle.addEventListener('change', function() {
@@ -283,9 +388,12 @@
           const cartTotal = getCartTotal();
           
           // Check if credits are sufficient
-          const availableCredits = parseFloat(creditData.credits || 0);
+          const availableCredits = parseFloat(creditData.credit || 0);
           
           if (availableCredits >= cartTotal) {
+            // Show discount creation status
+            showDiscountCreationStatus();
+            
             // Create discount
             const discountResponse = await fetch(`${APP_BASE_URL}/api/discounts/create`, {
               method: 'POST',
@@ -302,8 +410,7 @@
             const discountData = await discountResponse.json();
             
             if (discountData.success) {
-              showResult('Credits verified successfully! A 100% discount has been applied to your order.', 'success');
-              showCreditDetails(availableCredits, cartTotal, 'Approved');
+              showDiscountSuccess(discountData.discount_code);
               
               // Disable checkout until discount is applied
               disableCheckout();
@@ -330,9 +437,23 @@
       }
       
       function showCreditDetails(credits, total, status) {
-        document.getElementById('available-credits').textContent = `$${credits}`;
-        document.getElementById('credit-status').textContent = status;
+        availableCreditsSpan.textContent = `$${credits}`;
+        cartTotalSpan.textContent = `$${total}`;
+        creditStatusSpan.textContent = status;
         creditDetails.style.display = 'block';
+      }
+
+      function showDiscountCreationStatus() {
+        discountCreationStatus.style.display = 'block';
+        creditDetails.style.display = 'none';
+        discountSuccess.style.display = 'none';
+      }
+
+      function showDiscountSuccess(code) {
+        discountCreationStatus.style.display = 'none';
+        discountSuccess.style.display = 'block';
+        creditDetails.style.display = 'none';
+        appliedDiscountCodeSpan.textContent = code;
       }
       
       function resetForm() {
@@ -340,6 +461,8 @@
         document.getElementById('purchase-order').value = '';
         result.style.display = 'none';
         creditDetails.style.display = 'none';
+        discountCreationStatus.style.display = 'none';
+        discountSuccess.style.display = 'none';
         toggle.checked = false;
         form.style.display = 'none';
       }
