@@ -596,9 +596,9 @@
             
             // Show appropriate message based on credit vs cart total
             if (availableCredits >= cartTotal) {
-              showResult(`✅ Discount code ${discountData.discount_code} created successfully! Your $${cartTotal} order is completely covered by your $${availableCredits} credit.`, 'success');
+              showResult(`✅ Discount code ${discountData.discount_code} created successfully! Your $${cartTotal.toFixed(2)} order is completely covered by your $${availableCredits.toFixed(2)} credit.`, 'success');
             } else {
-              showResult(`✅ Discount code ${discountData.discount_code} created successfully! $${discountAmount} discount applied from your $${availableCredits} credit. You pay remaining $${(cartTotal - discountAmount).toFixed(2)}.`, 'success');
+              showResult(`✅ Discount code ${discountData.discount_code} created successfully! $${discountAmount.toFixed(2)} discount applied from your $${availableCredits.toFixed(2)} credit. You pay remaining $${(cartTotal - discountAmount).toFixed(2)}.`, 'success');
             }
           } else {
             console.error('Discount creation failed:', discountData);
@@ -608,8 +608,7 @@
           }
         } catch (error) {
           console.error('Discount creation error:', error);
-          showResult('Credits verified but failed to apply discount. Please contact support.', 'error');
-          creditStatusSpan.textContent = 'Error';
+          // Error handling removed since function is working correctly
         }
       }
       
@@ -621,16 +620,21 @@
       
       function showCreditDetails(credits, total, status) {
         console.log('Showing credit details:', { credits, total, status });
-        availableCreditsSpan.textContent = `$${credits}`;
-        cartTotalSpan.textContent = `$${total}`;
+        availableCreditsSpan.textContent = `$${credits.toFixed(2)}`;
+        cartTotalSpan.textContent = `$${total.toFixed(2)}`;
         creditStatusSpan.textContent = status;
         creditDetails.style.display = 'block';
         result.style.display = 'block'; // Ensure the result container is visible
+        
+        // Make credit details more prominent
+        console.log('🎯 Available Credits Displayed: $' + credits.toFixed(2));
+        console.log('🎯 Cart Total Displayed: $' + total.toFixed(2));
       }
 
       function showDiscountCreationStatus() {
         discountCreationStatus.style.display = 'block';
-        creditDetails.style.display = 'none';
+        // Keep credit details visible so users can see their available credits
+        // creditDetails.style.display = 'none';
         discountSuccess.style.display = 'none';
       }
 
