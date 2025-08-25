@@ -68,32 +68,16 @@
             <div id="discount-creation-status" style="display: none;">
               <div class="loading-discount">
                 <div class="spinner"></div>
-                <p>Creating your discount...</p>
+                <p>🎁 Applying your credits...</p>
               </div>
             </div>
             
             <div id="discount-success" style="display: none;">
               <div class="success-message">
-                <h4>✅ Discount Created Successfully!</h4>
-                <p>Your discount code has been created and is ready to apply.</p>
-                <p class="discount-code">Discount Code: <span id="applied-discount-code"></span></p>
-                <div class="discount-instructions">
-                  <p><strong>To apply this discount:</strong></p>
-                  <ol>
-                    <li>Look for a "Discount Code" or "Coupon Code" field on this page</li>
-                    <li>Enter the code above</li>
-                    <li>Click "Apply" or "Add" button</li>
-                  </ol>
-                  <p><em>If you can't find the discount field, the discount will be automatically applied at checkout.</em></p>
-                </div>
-                <div class="manual-apply-section">
-                  <button type="button" id="manual-apply-btn" class="btn btn-primary">
-                    Try Auto-Apply Again
-                  </button>
-                  <button type="button" id="copy-code-btn" class="btn btn-secondary">
-                    Copy Code to Clipboard
-                  </button>
-                </div>
+                <h4>✅ Credits Applied Successfully!</h4>
+                <p>Your credits have been applied and are ready to use.</p>
+                <p class="discount-code">Credit Code: <span id="applied-discount-code"></span></p>
+                <!-- Discount instructions and manual apply buttons removed since discount is automatically applied at checkout -->
               </div>
             </div>
           </div>
@@ -537,11 +521,11 @@
           // Always show credit details first
           showCreditDetails(availableCredits, cartTotal, 'Verifying...');
           
-          // Always create discount for available credit amount (even if less than cart total)
+          // Always apply credits for available credit amount (even if less than cart total)
           // Update status to show we're proceeding
-          creditStatusSpan.textContent = 'Creating Discount...';
+          creditStatusSpan.textContent = 'Applying Credits...';
           
-          // Show discount creation status
+          // Show credit application status
           showDiscountCreationStatus();
           
           // Calculate discount amount (use available credit, but don't exceed cart total)
@@ -596,15 +580,15 @@
             
             // Show appropriate message based on credit vs cart total
             if (availableCredits >= cartTotal) {
-              showResult(`✅ Discount code ${discountData.discount_code} created successfully! Your $${cartTotal.toFixed(2)} order is completely covered by your $${availableCredits.toFixed(2)} credit.`, 'success');
+              showResult(`✅ Credits applied successfully! Your $${cartTotal.toFixed(2)} order is completely covered by your $${availableCredits.toFixed(2)} credit.`, 'success');
             } else {
-              showResult(`✅ Discount code ${discountData.discount_code} created successfully! $${discountAmount.toFixed(2)} discount applied from your $${availableCredits.toFixed(2)} credit. You pay remaining $${(cartTotal - discountAmount).toFixed(2)}.`, 'success');
+              showResult(`✅ Credits applied successfully! $${discountAmount.toFixed(2)} from your $${availableCredits.toFixed(2)} credit applied. You pay remaining $${(cartTotal - discountAmount).toFixed(2)}.`, 'success');
             }
           } else {
             console.error('Discount creation failed:', discountData);
             // Show error but keep credit details visible
-            showResult('Credits verified but failed to create discount. Please contact support.', 'error');
-            creditStatusSpan.textContent = 'Discount Creation Failed';
+            showResult('Credits verified but failed to apply credits. Please contact support.', 'error');
+            creditStatusSpan.textContent = 'Credit Application Failed';
           }
         } catch (error) {
           console.error('Discount creation error:', error);
