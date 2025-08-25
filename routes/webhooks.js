@@ -68,12 +68,11 @@ async function handleOrderPaid(orderData) {
       return;
     }
 
-    // Get the original customer ID from discount properties
-    // We need to fetch the discount code details to get the properties
-    const originalCustomerId = await getOriginalCustomerIdFromDiscount(creditDiscount.code);
+    // Get the original customer ID from customer metafield
+    const originalCustomerId = await getOriginalCustomerIdFromMetafield(orderData.customer?.id);
     
     if (!originalCustomerId) {
-      console.log('⚠️ Could not find original customer ID in discount properties');
+      console.log('⚠️ Could not find original customer ID in metafield');
       return;
     }
 
@@ -127,13 +126,12 @@ async function callCreditRedemptionAPI(data) {
 }
 
 // Get original customer ID from discount code properties
-async function getOriginalCustomerIdFromDiscount(discountCode) {
+async function getOriginalCustomerIdFromMetafield(customerId) {
   try {
-    console.log('🔍 Fetching discount code details for:', discountCode);
+    console.log('🔍 Fetching customer metafield for:', customerId);
     
-    // First, find the price rule that contains this discount code
-    const priceRulesResponse = await axios.get(
-      `https://${config.shopify.shopUrl.replace('https://', '')}/admin/api/${config.shopify.apiVersion}/price_rules.json`,
+    const response = await axios.get(
+      `https://${config.shopify.shopUrl.replace('https://', '')}/admin/api/${config.shopify.apiVersion}/customers/${customerId}/metafields.json`,
       {
         headers: {
           'X-Shopify-Access-Token': config.shopify.accessToken
@@ -141,55 +139,21 @@ async function getOriginalCustomerIdFromDiscount(discountCode) {
       }
     );
 
-    // Find the price rule that contains our discount code
-    const priceRule = priceRulesResponse.data.price_rules.find(rule => 
-      rule.discount_codes && rule.discount_codes.some(code => code.code === discountCode)
+    const metafields = response.data.metafields;
+    const originalCustomerIdMetafield = metafields.find(metafield => 
+      metafield.namespace === 'credit_system' && metafield.key === 'original_customer_id'
     );
 
-    if (!priceRule) {
-      console.log('⚠️ No price rule found for discount code:', discountCode);
-      return null;
+    if (originalCustomerIdMetafield) {
+      console.log('✅ Found original customer ID in metafield:', originalCustomerIdMetafield.value);
+      return originalCustomerIdMetafield.value;
     }
 
-    console.log('🎯 Found price rule:', priceRule.id);
-
-    // Get the specific discount code details
-    const discountCodeResponse = await axios.get(
-      `https://${config.shopify.shopUrl.replace('https://', '')}/admin/api/${config.shopify.apiVersion}/price_rules/${priceRule.id}/discount_codes.json`,
-      {
-        headers: {
-          'X-Shopify-Access-Token': config.shopify.accessToken
-        }
-      }
-    );
-
-    // Find our specific discount code
-    const discountCodeDetails = discountCodeResponse.data.discount_codes.find(code => code.code === discountCode);
-
-    if (!discountCodeDetails) {
-      console.log('⚠️ No discount code details found for:', discountCode);
-      return null;
-    }
-
-    console.log('🎯 Found discount code details:', discountCodeDetails);
-
-    // Extract original customer ID from properties
-    if (discountCodeDetails.properties) {
-      const originalCustomerIdProperty = discountCodeDetails.properties.find(prop => 
-        prop.name === 'original_customer_id'
-      );
-
-      if (originalCustomerIdProperty) {
-        console.log('✅ Found original customer ID in properties:', originalCustomerIdProperty.value);
-        return originalCustomerIdProperty.value;
-      }
-    }
-
-    console.log('⚠️ No original customer ID property found in discount code');
+    console.log('⚠️ No original customer ID metafield found for customer:', customerId);
     return null;
 
   } catch (error) {
-    console.error('❌ Error fetching discount code details:', error.message);
+    console.error('❌ Error fetching customer metafield:', error.message);
     return null;
   }
 }

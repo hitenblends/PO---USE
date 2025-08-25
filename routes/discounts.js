@@ -69,18 +69,7 @@ router.post('/create', async (req, res) => {
         discount_codes: [
           {
             code: discount_code || `CREDIT_${Date.now()}`,
-            usage_count: 0,
-            // Store original customer ID as properties for webhook extraction
-            properties: [
-              {
-                name: "original_customer_id",
-                value: customer_id
-              },
-              {
-                name: "discount_type",
-                value: "credit_redemption"
-              }
-            ]
+            usage_count: 0
           }
         ]
       }
@@ -129,18 +118,7 @@ router.post('/create', async (req, res) => {
       const discountCodeData = {
         discount_code: {
           code: discountCode,
-          price_rule_id: createdDiscount.id,
-          // Store original customer ID as properties for webhook extraction
-          properties: [
-            {
-              name: "original_customer_id",
-              value: customer_id
-            },
-            {
-              name: "discount_type",
-              value: "credit_redemption"
-            }
-          ]
+          price_rule_id: createdDiscount.id
         }
       };
       
