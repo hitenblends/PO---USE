@@ -7,10 +7,13 @@ router.post('/shopify/orders', async (req, res) => {
   try {
     console.log('🎯 Shopify webhook received - Raw data:', JSON.stringify(req.body, null, 2));
     console.log('🎯 Headers:', JSON.stringify(req.headers, null, 2));
-    console.log('🎯 Topic:', req.body.topic);
-    console.log('🎯 Data:', req.body.data);
-
-    const { topic, data } = req.body;
+    
+    // Read topic from Shopify headers (not request body)
+    const topic = req.headers['x-shopify-topic'];
+    const data = req.body; // Order data is in the body
+    
+    console.log('🎯 Topic from headers:', topic);
+    console.log('🎯 Order data:', data.id, data.financial_status);
 
     if (topic === 'orders/paid') {
       console.log('💰 Order paid webhook - processing credit redemption...');
