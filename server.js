@@ -6,6 +6,7 @@ const bodyParser = require('body-parser');
 const config = require('./config');
 const creditCheckRoutes = require('./routes/creditCheck');
 const discountRoutes = require('./routes/discounts');
+const webhookRoutes = require('./routes/webhooks');
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Routes
 app.use('/api/credit-check', creditCheckRoutes);
 app.use('/api/discounts', discountRoutes);
+app.use('/api/webhooks', webhookRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
