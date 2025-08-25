@@ -95,6 +95,10 @@ async function handleOrderPaid(orderData) {
 
     if (redemptionResult.success) {
       console.log('✅ Credit redemption successful for order:', orderData.id);
+      
+      // Delete discount code from Shopify to keep admin panel clean
+      await deleteDiscountCode(creditDiscount.code);
+
     } else {
       console.error('❌ Credit redemption failed for order:', orderData.id, redemptionResult);
       
@@ -124,6 +128,52 @@ async function callCreditRedemptionAPI(data) {
   } catch (error) {
     console.error('❌ Credit redemption API error:', error.response?.data || error.message);
     return { success: false, error: error.message };
+  }
+}
+
+// Delete discount code from Shopify to keep admin panel clean
+async function deleteDiscountCode(discountCode) {
+  try {
+    console.log('🗑️ Deleting discount code to clean admin panel:', discountCode);
+    
+    // First, find the price rule that contains this discount code
+    const priceRulesResponse = await axios.get(
+      `https://${config.shopify.shopUrl.replace('https://', '')}/admin/api/${config.shopify.apiVersion}/price_rules.json`,
+      {
+        headers: {
+          'X-Shopify-Access-Token': config.shopify.accessToken
+        }
+      }
+    );
+
+    // Find the price rule that contains our discount code
+    const priceRule = priceRulesResponse.data.price_rules.find(rule => 
+      rule.discount_codes && rule.discount_codes.some(code => code.code === discountCode)
+    );
+
+    if (!priceRule) {
+      console.log('⚠️ No price rule found for discount code:', discountCode);
+      return false;
+    }
+
+    console.log('🎯 Found price rule to delete:', priceRule.id);
+
+    // Delete the entire price rule (which includes the discount code)
+    await axios.delete(
+      `https://${config.shopify.shopUrl.replace('https://', '')}/admin/api/${config.shopify.apiVersion}/price_rules/${priceRule.id}.json`,
+      {
+        headers: {
+          'X-Shopify-Access-Token': config.shopify.accessToken
+        }
+      }
+    );
+    
+    console.log('✅ Discount code deleted successfully:', discountCode);
+    return true;
+    
+  } catch (error) {
+    console.error('❌ Error deleting discount code:', error.message);
+    return false;
   }
 }
 
