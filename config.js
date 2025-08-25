@@ -2,7 +2,7 @@ module.exports = {
   // Shopify Configuration
   shopify: {
     shopUrl: 'https://everythingsafetynd.myshopify.com',
-    accessToken: process.env.SHOPIFY_ACCESS_TOKEN || 'YOUR_SHOPIFY_ACCESS_TOKEN_HERE',
+    accessToken: process.env.SHOPIFY_ACCESS_TOKEN || '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',
     apiVersion: '2024-01'
   },
   
