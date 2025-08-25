@@ -64,16 +64,51 @@ router.post('/create', async (req, res) => {
     
     console.log('Created discount:', createdDiscount);
 
-    // Check if discount was created successfully and has discount codes
-    if (!createdDiscount || !createdDiscount.discount_codes || createdDiscount.discount_codes.length === 0) {
-      throw new Error('Discount created but no discount code generated');
+    // Check if discount was created successfully
+    if (!createdDiscount) {
+      throw new Error('Failed to create discount in Shopify');
+    }
+
+    // Generate a discount code if none was returned
+    let discountCode = discount_code || `CREDIT_${Date.now()}`;
+    
+    // If the discount was created but no code, we need to create the code separately
+    if (!createdDiscount.discount_codes || createdDiscount.discount_codes.length === 0) {
+      // Create the discount code separately
+      const discountCodeData = {
+        discount_code: {
+          code: discountCode,
+          price_rule_id: createdDiscount.id
+        }
+      };
+      
+      try {
+        const codeResponse = await axios.post(
+          `https://${config.shopify.shopUrl.replace('https://', '')}/admin/api/${config.shopify.apiVersion}/price_rules/${createdDiscount.id}/discount_codes.json`,
+          discountCodeData,
+          {
+            headers: {
+              'X-Shopify-Access-Token': config.shopify.accessToken,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+        
+        console.log('Created discount code:', codeResponse.data);
+        discountCode = codeResponse.data.discount_code.code;
+      } catch (codeError) {
+        console.error('Failed to create discount code:', codeError.message);
+        // Continue with the generated code even if creation fails
+      }
+    } else {
+      discountCode = createdDiscount.discount_codes[0].code;
     }
 
     res.json({
       success: true,
       data: createdDiscount,
       message: 'Discount created successfully',
-      discount_code: createdDiscount.discount_codes[0].code
+      discount_code: discountCode
     });
 
   } catch (error) {
