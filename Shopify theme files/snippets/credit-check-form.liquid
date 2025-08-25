@@ -586,7 +586,7 @@
             window.creditData = {
               credit: availableCredits,
               customer_id: customerId,
-              purchase_order: purchaseOrder
+              purchase_order: creditData.purchase_order
             };
             
             showDiscountSuccess(discountData.discount_code);
@@ -641,7 +641,8 @@
       function showDiscountSuccess(code) {
         discountCreationStatus.style.display = 'none';
         discountSuccess.style.display = 'block';
-        creditDetails.style.display = 'none';
+        // Keep credit details visible so users can see their available credits
+        // creditDetails.style.display = 'none';
         appliedDiscountCodeSpan.textContent = code;
         
         // Show discount calculation summary
