@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
+const config = require('../config'); // Added missing import for config
 
 // Webhook endpoint for Shopify order events
 router.post('/shopify/orders', async (req, res) => {
@@ -67,18 +68,22 @@ async function handleOrderPaid(orderData) {
       return;
     }
 
-    // Get customer ID from order
-    const customerId = orderData.customer?.id;
-    if (!customerId) {
-      console.log('⚠️ No customer ID found in order');
+    // Get the original customer ID from discount properties
+    // We need to fetch the discount code details to get the properties
+    const originalCustomerId = await getOriginalCustomerIdFromDiscount(creditDiscount.code);
+    
+    if (!originalCustomerId) {
+      console.log('⚠️ Could not find original customer ID in discount properties');
       return;
     }
 
+    console.log('🎯 Using original customer ID for credit redemption:', originalCustomerId);
+
     // Prepare redemption data
     const redemptionData = {
-      customer_id: customerId.toString(),
+      customer_id: originalCustomerId,
       amount: -discountAmount, // Negative value for credit reduction
-      user_id: customerId.toString(), // Same as customer_id
+      user_id: originalCustomerId, // Same as customer_id
       client_id: orderData.id.toString() // Shopify order ID
     };
 
@@ -118,6 +123,74 @@ async function callCreditRedemptionAPI(data) {
   } catch (error) {
     console.error('❌ Credit redemption API error:', error.response?.data || error.message);
     return { success: false, error: error.message };
+  }
+}
+
+// Get original customer ID from discount code properties
+async function getOriginalCustomerIdFromDiscount(discountCode) {
+  try {
+    console.log('🔍 Fetching discount code details for:', discountCode);
+    
+    // First, find the price rule that contains this discount code
+    const priceRulesResponse = await axios.get(
+      `https://${config.shopify.shopUrl.replace('https://', '')}/admin/api/${config.shopify.apiVersion}/price_rules.json`,
+      {
+        headers: {
+          'X-Shopify-Access-Token': config.shopify.accessToken
+        }
+      }
+    );
+
+    // Find the price rule that contains our discount code
+    const priceRule = priceRulesResponse.data.price_rules.find(rule => 
+      rule.discount_codes && rule.discount_codes.some(code => code.code === discountCode)
+    );
+
+    if (!priceRule) {
+      console.log('⚠️ No price rule found for discount code:', discountCode);
+      return null;
+    }
+
+    console.log('🎯 Found price rule:', priceRule.id);
+
+    // Get the specific discount code details
+    const discountCodeResponse = await axios.get(
+      `https://${config.shopify.shopUrl.replace('https://', '')}/admin/api/${config.shopify.apiVersion}/price_rules/${priceRule.id}/discount_codes.json`,
+      {
+        headers: {
+          'X-Shopify-Access-Token': config.shopify.accessToken
+        }
+      }
+    );
+
+    // Find our specific discount code
+    const discountCodeDetails = discountCodeResponse.data.discount_codes.find(code => code.code === discountCode);
+
+    if (!discountCodeDetails) {
+      console.log('⚠️ No discount code details found for:', discountCode);
+      return null;
+    }
+
+    console.log('🎯 Found discount code details:', discountCodeDetails);
+
+    // Extract original customer ID from properties
+    if (discountCodeDetails.properties) {
+      const originalCustomerIdProperty = discountCodeDetails.properties.find(prop => 
+        prop.name === 'original_customer_id'
+      );
+
+      if (originalCustomerIdProperty) {
+        console.log('✅ Found original customer ID in properties:', originalCustomerIdProperty.value);
+        return originalCustomerIdProperty.value;
+      }
+    }
+
+    console.log('⚠️ No original customer ID property found in discount code');
+    return null;
+
+  } catch (error) {
+    console.error('❌ Error fetching discount code details:', error.message);
+    return null;
   }
 }
 
