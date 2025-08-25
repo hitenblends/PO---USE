@@ -34,16 +34,6 @@ router.post('/verify', async (req, res) => {
     
     console.log('Credit check response:', creditData);
 
-    // Add metafield to existing Shopify customer to store the original customer ID
-    // This will be used by the webhook to identify the correct customer for credit redemption
-    try {
-      await addMetafieldToExistingCustomer(shopify_customer_id, customer_id, creditData);
-      console.log('✅ Customer metafield added successfully');
-    } catch (metafieldError) {
-      console.warn('⚠️ Warning: Could not add customer metafield:', metafieldError.message);
-      // Continue with credit check even if metafield creation fails
-    }
-
     res.json({
       success: true,
       data: creditData,
@@ -100,98 +90,5 @@ router.get('/status', async (req, res) => {
     });
   }
 });
-
-/**
- * Update existing customer metafield
- */
-async function updateCustomerMetafield(shopifyCustomerId, originalCustomerId, creditData) {
-  try {
-    console.log('🔄 Updating existing metafield for customer:', shopifyCustomerId);
-    
-    // Get existing metafields to find the one we want to update
-    const metafieldsResponse = await axios.get(
-      `https://${config.shopify.shopUrl.replace('https://', '')}/admin/api/${config.shopify.apiVersion}/customers/${shopifyCustomerId}/metafields.json`,
-      {
-        headers: {
-          'X-Shopify-Access-Token': config.shopify.accessToken
-        }
-      }
-    );
-    
-    // Find our metafield
-    const existingMetafield = metafieldsResponse.data.metafields.find(meta => 
-      meta.namespace === 'credit_system' && meta.key === 'original_customer_id'
-    );
-    
-    if (existingMetafield) {
-      // Update existing metafield
-      const updateResponse = await axios.put(
-        `https://${config.shopify.shopUrl.replace('https://', '')}/admin/api/${config.shopify.apiVersion}/metafields/${existingMetafield.id}.json`,
-        {
-          metafield: {
-            value: originalCustomerId
-          }
-        },
-        {
-          headers: {
-            'X-Shopify-Access-Token': config.shopify.accessToken,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-      
-      console.log('✅ Metafield updated successfully:', updateResponse.data.metafield);
-      return updateResponse.data.metafield;
-    } else {
-      throw new Error('Metafield not found for update');
-    }
-    
-  } catch (error) {
-    console.error('❌ Error updating metafield:', error.message);
-    throw error;
-  }
-}
-
-/**
- * Add metafield to an existing Shopify customer
- */
-async function addMetafieldToExistingCustomer(shopifyCustomerId, originalCustomerId, creditData) {
-  try {
-    console.log('🔧 Adding metafield to existing Shopify customer:', shopifyCustomerId);
-
-    // Create the metafield data
-    const metafieldData = {
-      metafield: {
-        namespace: "credit_system",
-        key: "original_customer_id",
-        value: originalCustomerId,
-        type: "single_line_text_field"
-      }
-    };
-
-    // Add the metafield to the customer
-    const metafieldResponse = await axios.post(
-      `https://${config.shopify.shopUrl.replace('https://', '')}/admin/api/${config.shopify.apiVersion}/customers/${shopifyCustomerId}/metafields.json`,
-      metafieldData,
-      {
-        headers: {
-          'X-Shopify-Access-Token': config.shopify.accessToken,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-
-    console.log('✅ Metafield added successfully:', metafieldResponse.data.metafield);
-    return metafieldResponse.data.metafield;
-
-  } catch (error) {
-    if (error.response?.status === 422) {
-      // Metafield already exists, try to update it
-      console.log('🔄 Metafield already exists, attempting to update...');
-      return await updateCustomerMetafield(shopifyCustomerId, originalCustomerId, creditData);
-    }
-    throw error;
-  }
-}
 
 module.exports = router;

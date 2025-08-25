@@ -22,9 +22,6 @@
     </div>
     
     <div id="credit-check-form" class="credit-check-form" style="display: none;">
-      <!-- Hidden field to store Shopify customer ID -->
-      <input type="hidden" id="shopify-customer-id" value="{{ customer.id }}">
-      
       <div class="form-row">
         <div class="form-group">
           <label for="customer-id">Customer ID:</label>
@@ -483,8 +480,7 @@
             },
             body: JSON.stringify({
               customer_id: customerId,
-              purchase_order: purchaseOrder,
-              shopify_customer_id: document.getElementById('shopify-customer-id').value
+              purchase_order: purchaseOrder
             })
           });
           
