@@ -1,0 +1,382 @@
+{% comment %}
+  Credit Check Form Snippet
+  This snippet should be included in the cart page to allow logged-in customers
+  to verify their credits and apply discounts.
+  
+  Usage: {% render 'credit-check-form' %}
+{% endcomment %}
+
+{% if customer %}
+  <div id="credit-check-container" class="credit-check-section">
+    <div class="credit-check-header">
+      <h3>Credit Check</h3>
+      <p>Verify your available credits to apply to this order</p>
+    </div>
+    
+    <div class="credit-check-toggle">
+      <label class="checkbox-label">
+        <input type="checkbox" id="credit-check-toggle" class="credit-check-checkbox">
+        <span class="checkmark"></span>
+        I want to use my available credits
+      </label>
+    </div>
+    
+    <div id="credit-check-form" class="credit-check-form" style="display: none;">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="customer-id">Customer ID:</label>
+          <input type="text" id="customer-id" name="customer_id" placeholder="Enter your customer ID" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="purchase-order">Purchase Order:</label>
+          <input type="text" id="purchase-order" name="purchase_order" placeholder="Enter purchase order number" required>
+        </div>
+      </div>
+      
+      <div class="form-actions">
+        <button type="button" id="verify-credits-btn" class="btn btn-primary">
+          Verify Credits
+        </button>
+        <button type="button" id="clear-form-btn" class="btn btn-secondary">
+          Clear
+        </button>
+      </div>
+      
+      <div id="credit-check-result" class="credit-check-result" style="display: none;">
+        <div class="result-content">
+          <div id="result-message"></div>
+          <div id="credit-details" style="display: none;">
+            <p><strong>Available Credits:</strong> <span id="available-credits"></span></p>
+            <p><strong>Cart Total:</strong> <span id="cart-total"></span></p>
+            <p><strong>Status:</strong> <span id="credit-status"></span></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .credit-check-section {
+      margin: 20px 0;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: #f9f9f9;
+    }
+    
+    .credit-check-header h3 {
+      margin: 0 0 10px 0;
+      color: #333;
+      font-size: 18px;
+    }
+    
+    .credit-check-header p {
+      margin: 0 0 20px 0;
+      color: #666;
+      font-size: 14px;
+    }
+    
+    .credit-check-toggle {
+      margin-bottom: 20px;
+    }
+    
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    
+    .credit-check-checkbox {
+      margin-right: 10px;
+    }
+    
+    .credit-check-form {
+      border-top: 1px solid #ddd;
+      padding-top: 20px;
+    }
+    
+    .form-row {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    
+    .form-group {
+      flex: 1;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+      color: #333;
+    }
+    
+    .form-group input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    
+    .form-actions {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: background-color 0.3s;
+    }
+    
+    .btn-primary {
+      background-color: #007cba;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background-color: #005a87;
+    }
+    
+    .btn-secondary {
+      background-color: #6c757d;
+      color: white;
+    }
+    
+    .btn-secondary:hover {
+      background-color: #545b62;
+    }
+    
+    .btn:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    
+    .credit-check-result {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 4px;
+    }
+    
+    .result-content {
+      font-size: 14px;
+    }
+    
+    .result-success {
+      background-color: #d4edda;
+      border: 1px solid #c3e6cb;
+      color: #155724;
+    }
+    
+    .result-error {
+      background-color: #f8d7da;
+      border: 1px solid #f5c6cb;
+      color: #721c24;
+    }
+    
+    .result-info {
+      background-color: #d1ecf1;
+      border: 1px solid #bee5eb;
+      color: #0c5460;
+    }
+    
+    .credit-details p {
+      margin: 5px 0;
+    }
+    
+    @media (max-width: 768px) {
+      .form-row {
+        flex-direction: column;
+        gap: 10px;
+      }
+      
+      .form-actions {
+        flex-direction: column;
+      }
+    }
+  </style>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const container = document.getElementById('credit-check-container');
+      const toggle = document.getElementById('credit-check-toggle');
+      const form = document.getElementById('credit-check-form');
+      const verifyBtn = document.getElementById('verify-credits-btn');
+      const clearBtn = document.getElementById('clear-form-btn');
+      const result = document.getElementById('credit-check-result');
+      const resultMessage = document.getElementById('result-message');
+      const creditDetails = document.getElementById('credit-details');
+      
+      // App configuration - UPDATE THIS URL TO YOUR DEPLOYED APP
+      const APP_BASE_URL = 'https://your-app-name.onrender.com';
+      
+      // Toggle form visibility
+      toggle.addEventListener('change', function() {
+        if (this.checked) {
+          form.style.display = 'block';
+          result.style.display = 'none';
+        } else {
+          form.style.display = 'none';
+          result.style.display = 'none';
+          resetForm();
+        }
+      });
+      
+      // Verify credits
+      verifyBtn.addEventListener('click', async function() {
+        const customerId = document.getElementById('customer-id').value.trim();
+        const purchaseOrder = document.getElementById('purchase-order').value.trim();
+        
+        if (!customerId || !purchaseOrder) {
+          showResult('Please fill in all required fields.', 'error');
+          return;
+        }
+        
+        // Disable button and show loading
+        verifyBtn.disabled = true;
+        verifyBtn.textContent = 'Verifying...';
+        
+        try {
+          const response = await fetch(`${APP_BASE_URL}/api/credit-check/verify`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              customer_id: customerId,
+              purchase_order: purchaseOrder
+            })
+          });
+          
+          const data = await response.json();
+          
+          if (data.success) {
+            await handleCreditCheckSuccess(data.data, customerId);
+          } else {
+            showResult(data.message || 'Credit check failed.', 'error');
+          }
+        } catch (error) {
+          console.error('Credit check error:', error);
+          showResult('An error occurred while verifying credits. Please try again.', 'error');
+        } finally {
+          // Re-enable button
+          verifyBtn.disabled = false;
+          verifyBtn.textContent = 'Verify Credits';
+        }
+      });
+      
+      // Clear form
+      clearBtn.addEventListener('click', resetForm);
+      
+      async function handleCreditCheckSuccess(creditData, customerId) {
+        try {
+          // Get cart total from Shopify
+          const cartTotal = getCartTotal();
+          
+          // Check if credits are sufficient
+          const availableCredits = parseFloat(creditData.credits || 0);
+          
+          if (availableCredits >= cartTotal) {
+            // Create discount
+            const discountResponse = await fetch(`${APP_BASE_URL}/api/discounts/create`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                customer_id: customerId,
+                discount_amount: availableCredits,
+                cart_total: cartTotal
+              })
+            });
+            
+            const discountData = await discountResponse.json();
+            
+            if (discountData.success) {
+              showResult('Credits verified successfully! A 100% discount has been applied to your order.', 'success');
+              showCreditDetails(availableCredits, cartTotal, 'Approved');
+              
+              // Disable checkout until discount is applied
+              disableCheckout();
+              
+              // Apply discount code automatically
+              applyDiscountCode(discountData.discount_code);
+            } else {
+              showResult('Credits verified but failed to create discount. Please contact support.', 'error');
+            }
+          } else {
+            showResult(`Credits verified. You have $${availableCredits} available, but your cart total is $${cartTotal}.`, 'info');
+            showCreditDetails(availableCredits, cartTotal, 'Insufficient');
+          }
+        } catch (error) {
+          console.error('Discount creation error:', error);
+          showResult('Credits verified but failed to apply discount. Please contact support.', 'error');
+        }
+      }
+      
+      function showResult(message, type) {
+        resultMessage.textContent = message;
+        result.className = `credit-check-result result-${type}`;
+        result.style.display = 'block';
+      }
+      
+      function showCreditDetails(credits, total, status) {
+        document.getElementById('available-credits').textContent = `$${credits}`;
+        document.getElementById('credit-status').textContent = status;
+        creditDetails.style.display = 'block';
+      }
+      
+      function resetForm() {
+        document.getElementById('customer-id').value = '';
+        document.getElementById('purchase-order').value = '';
+        result.style.display = 'none';
+        creditDetails.style.display = 'none';
+        toggle.checked = false;
+        form.style.display = 'none';
+      }
+      
+      function getCartTotal() {
+        // This should be implemented based on your theme's cart structure
+        // You might need to adjust this based on how your theme displays cart total
+        const cartTotalElement = document.querySelector('.cart-total, .cart__total, [data-cart-total]');
+        if (cartTotalElement) {
+          const totalText = cartTotalElement.textContent.replace(/[^0-9.]/g, '');
+          return parseFloat(totalText) || 0;
+        }
+        return 0;
+      }
+      
+      function disableCheckout() {
+        // Disable checkout button until discount is applied
+        const checkoutBtn = document.querySelector('.cart__checkout, .cart-checkout, [data-checkout]');
+        if (checkoutBtn) {
+          checkoutBtn.disabled = true;
+          checkoutBtn.textContent = 'Applying Discount...';
+        }
+      }
+      
+      function applyDiscountCode(code) {
+        // Apply discount code to cart
+        // This might need to be adjusted based on your theme's discount application method
+        const discountInput = document.querySelector('.discount-input, .discount-code-input, [data-discount-input]');
+        if (discountInput) {
+          discountInput.value = code;
+          // Trigger discount application if there's a submit button
+          const discountSubmit = discountInput.nextElementSibling;
+          if (discountSubmit && discountSubmit.tagName === 'BUTTON') {
+            discountSubmit.click();
+          }
+        }
+      }
+    });
+  </script>
+{% endif %}
